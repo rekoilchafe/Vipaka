@@ -40,7 +40,7 @@
         button {
             background: #2c1810; color: #fff; border: none;
             padding: 16px 38px; font-size: 1.1rem; font-weight: 600;
-            border-radius: 100px;
+            border-radius: 100px; cursor: pointer;
         }
         .score-pill {
             position: absolute; top: 40px;
@@ -59,7 +59,8 @@
         <div id="scoreDisplay" class="score-pill">Equanimity: 0</div>
         <div id="start-menu" class="glass-panel">
             <h1>VIPAKA</h1>
-            <button id="startBtn" disabled>Begin</button>
+            <p id="load-msg">Aligning the senses...</p>
+            <button id="startBtn" disabled>Begin Journey</button>
         </div>
         <div id="over-menu" class="glass-panel hidden">
             <h2 id="reason">Return to Breath</h2>
@@ -69,23 +70,37 @@
 </div>
 
 <script>
-const textures = { Mara: new Image(), Devadatta: new Image(), Angulimala: new Image(), Player: new Image() };
-let loaded = 0;
-const onLoad = () => { if(++loaded === 4) document.getElementById('startBtn').disabled = false; };
-textures.Mara.onload = textures.Devadatta.onload = textures.Angulimala.onload = textures.Player.onload = onLoad;
-textures.Mara.src = 'mararef1.png'; textures.Devadatta.src = 'devdattaref1.png'; textures.Angulimala.src = 'angulimalaref1.png'; textures.Player.src = 'playerlotus.png';
-
 /**
- * PHYSICS: Slightly increased to compensate for potential 30fps drops on iOS
+ * ASSET MANAGEMENT
  */
+const textures = { Mara: new Image(), Devadatta: new Image(), Angulimala: new Image(), Player: new Image() };
+const sounds = {
+    bg: new Audio('JaymangalAtthagathaPiano.mp3'),
+    mara: new Audio('marafx.mp3'),
+    angulimala: new Audio('marafx.mp3'),
+    devadatta: new Audio('devdattafx.wav')
+};
+
+sounds.bg.volume = 0.3;
+sounds.bg.loop = true;
+
+let loadedAssets = 0;
+const checkAssets = () => {
+    if(++loadedAssets === 4) {
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('load-msg').innerText = "Sound and spirit are ready.";
+    }
+};
+
+textures.Mara.onload = textures.Devadatta.onload = textures.Angulimala.onload = textures.Player.onload = checkAssets;
+textures.Mara.src = 'mararef1.png'; 
+textures.Devadatta.src = 'devdattaref1.png'; 
+textures.Angulimala.src = 'angulimalaref1.png'; 
+textures.Player.src = 'playerlotus.png';
+
 const CONFIG = {
-    gravity: 0.15, 
-    jump: -3.8, 
-    speed: 1.8, 
-    cloudSpeed: 0.3,
-    gap: 300, 
-    spawnRate: 180, 
-    lotusMercy: 0.45,
+    gravity: 0.15, jump: -3.8, speed: 1.8, cloudSpeed: 0.3,
+    gap: 300, spawnRate: 180, lotusMercy: 0.45,
     states: { IDLE: 'IDLE', GATHER: 'GATHER', RELEASE: 'RELEASE' }
 };
 
@@ -113,7 +128,6 @@ class Lotus {
     update() { this.velocity += CONFIG.gravity; this.y += this.velocity; }
     draw(ctx) {
         const x = this.x | 0, y = this.y | 0;
-        // Faster glow - no gradients, just a soft white circle
         ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
         ctx.beginPath(); ctx.arc(x, y, 40, 0, Math.PI * 2); ctx.fill();
         if (textures.Player.complete) ctx.drawImage(textures.Player, x - 35, y - 35, 70, 70);
@@ -142,23 +156,46 @@ class Villain {
         this.x = x; this.y = gapY + (CONFIG.gap / 2); this.name = name;
         this.state = CONFIG.states.IDLE; this.timer = 0;
         this.durations = { IDLE: 120, GATHER: 80, RELEASE: 40 };
+        this.activeSounds = []; // To track sounds triggered by this villain
     }
+
     update(projs) {
         this.x -= CONFIG.speed; this.timer++;
         if(this.state === CONFIG.states.IDLE && this.timer > this.durations.IDLE) this.transition(CONFIG.states.GATHER);
         else if(this.state === CONFIG.states.GATHER && this.timer > this.durations.GATHER) { this.transition(CONFIG.states.RELEASE); this.fire(projs); }
         else if(this.state === CONFIG.states.RELEASE && this.timer > this.durations.RELEASE) this.transition(CONFIG.states.IDLE);
+        
+        // Clean up sound array if sounds have finished playing naturally
+        this.activeSounds = this.activeSounds.filter(s => !s.ended);
     }
+
     fire(projs) {
+        const soundKey = this.name.toLowerCase();
+        if (sounds[soundKey]) {
+            const sfx = sounds[soundKey].cloneNode();
+            sfx.play().catch(() => {});
+            this.activeSounds.push(sfx); // Track the sound
+        }
+
         if(this.name === 'Mara') {
             const c = Math.random() > 0.5 ? 3 : 2;
             for(let i=0; i<c; i++) projs.push(new Projectile(this.x, this.y, this.name, (i - (c-1)/2)*35));
         } else projs.push(new Projectile(this.x, this.y, this.name));
     }
+
+    // New method to cut audio immediately
+    stopAllSounds() {
+        this.activeSounds.forEach(s => {
+            s.pause();
+            s.currentTime = 0;
+        });
+        this.activeSounds = [];
+    }
+
     transition(s) { this.state = s; this.timer = 0; }
+
     draw(ctx) {
         const x = this.x | 0, y = this.y | 0;
-        // Map 225x75 sprite sheet (75 per frame)
         let frameX = this.state === CONFIG.states.GATHER ? 75 : (this.state === CONFIG.states.RELEASE ? 150 : 0);
         if (textures[this.name].complete) {
             ctx.drawImage(textures[this.name], frameX, 0, 75, 75, x - 45, y - 45, 90, 90);
@@ -180,7 +217,7 @@ class Obstacle {
 class GameEngine {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d', { alpha: false }); // Disable alpha for max performance
+        this.ctx = this.canvas.getContext('2d', { alpha: false });
         this.offscreenSky = document.createElement('canvas');
         this.setupRetina();
         this.lotus = new Lotus();
@@ -193,15 +230,12 @@ class GameEngine {
         const dpr = window.devicePixelRatio || 1;
         this.virtualW = Math.min(window.innerWidth * 0.95, 420);
         this.virtualH = Math.min(window.innerHeight * 0.88, 700);
-        
         this.canvas.width = this.virtualW * dpr;
         this.canvas.height = this.virtualH * dpr;
         this.canvas.style.width = this.virtualW + 'px';
         this.canvas.style.height = this.virtualH + 'px';
-        
         this.ctx.scale(dpr, dpr);
 
-        // Cache the Twilight Sky
         this.offscreenSky.width = this.canvas.width;
         this.offscreenSky.height = this.canvas.height;
         const osCtx = this.offscreenSky.getContext('2d');
@@ -215,25 +249,33 @@ class GameEngine {
         const act = (e) => { if(this.running) this.lotus.jump(); e.preventDefault(); };
         this.canvas.addEventListener('touchstart', act, {passive: false});
         this.canvas.addEventListener('mousedown', act);
-        document.getElementById('startBtn').onclick = () => this.start();
-        document.getElementById('retryBtn').onclick = () => this.start();
+        document.getElementById('startBtn').onclick = () => { sounds.bg.play(); this.start(); };
+        document.getElementById('retryBtn').onclick = () => {
+            // Stop any leftover SFX on game restart
+            this.villains.forEach(v => v.stopAllSounds());
+            this.start();
+        };
     }
 
     start() {
         this.obstacles = []; this.villains = []; this.projectiles = []; this.score = 0; this.frame = 0;
         this.lotus.reset(); this.running = true;
-        document.getElementById('start-menu').classList.add('hidden'); document.getElementById('over-menu').classList.add('hidden');
+        document.getElementById('start-menu').classList.add('hidden'); 
+        document.getElementById('over-menu').classList.add('hidden');
         this.loop();
     }
 
     update() {
         this.lotus.update(); this.clouds.forEach(c => { c.update(); if(c.x < -150) c.reset(this.virtualW); });
+        
         if(this.lotus.y < 0 || this.lotus.y > this.virtualH) this.running = false;
+        
         if(++this.frame % CONFIG.spawnRate === 0) {
             const o = new Obstacle(this.virtualW, this.virtualH); this.obstacles.push(o);
             const vNames = ['Devadatta', 'Mara', 'Angulimala'];
             this.villains.push(new Villain(this.virtualW + 100, o.gapY, vNames[Math.floor(Math.random()*3)]));
         }
+
         this.obstacles.forEach((o, i) => {
             o.update();
             if(this.lotus.x + 10 > o.x && this.lotus.x - 10 < o.x + o.width) {
@@ -242,19 +284,30 @@ class GameEngine {
             if(!o.passed && o.x < this.lotus.x) { o.passed = true; this.score++; }
             if(o.x < -100) this.obstacles.splice(i, 1);
         });
-        this.villains.forEach(v => v.update(this.projectiles));
+
+        this.villains.forEach((v, i) => {
+            v.update(this.projectiles);
+            if(v.x < -100) {
+                v.stopAllSounds(); // AUTO-CUT SOUNDS HERE
+                this.villains.splice(i, 1);
+            }
+        });
+
         this.projectiles.forEach((p, i) => {
             p.update(); if(Math.hypot(p.x - this.lotus.x, p.y - this.lotus.y) < 22) this.running = false;
             if(p.x < -50) this.projectiles.splice(i, 1);
         });
-        if(!this.running) document.getElementById('over-menu').classList.remove('hidden');
+
+        if(!this.running) {
+            // Cut sounds when you lose
+            this.villains.forEach(v => v.stopAllSounds());
+            document.getElementById('over-menu').classList.remove('hidden');
+        }
         document.getElementById('scoreDisplay').innerText = `Equanimity: ${this.score}`;
     }
 
     draw() {
-        // DRAW PRE-CACHED SKY (The fastest operation)
         this.ctx.drawImage(this.offscreenSky, 0, 0, this.canvas.width, this.canvas.height, 0, 0, this.virtualW, this.virtualH);
-        
         this.clouds.forEach(c => c.draw(this.ctx));
         this.obstacles.forEach(o => o.draw(this.ctx, this.virtualH));
         this.villains.forEach(v => v.draw(this.ctx));
