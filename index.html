@@ -77,7 +77,7 @@ const textures = { Mara: new Image(), Devadatta: new Image(), Angulimala: new Im
 const sounds = {
     bg: new Audio('JaymangalAtthagathaPiano.mp3'),
     mara: new Audio('marafx.mp3'),
-    angulimala: new Audio('angulimalafx.wav'), // Updated filename
+    angulimala: new Audio('angulimalafx.wav'),
     devadatta: new Audio('devdattafx.wav')
 };
 
@@ -155,7 +155,8 @@ class Villain {
     constructor(x, gapY, name) {
         this.x = x; this.y = gapY + (CONFIG.gap / 2); this.name = name;
         this.state = CONFIG.states.IDLE; this.timer = 0;
-        this.durations = { IDLE: 120, GATHER: 80, RELEASE: 40 };
+        // Aggression Tweak: Reduced IDLE and GATHER to make them shoot sooner
+        this.durations = { IDLE: 60, GATHER: 50, RELEASE: 40 };
         this.activeSounds = [];
     }
 
@@ -182,10 +183,7 @@ class Villain {
     }
 
     stopAllSounds() {
-        this.activeSounds.forEach(s => {
-            s.pause();
-            s.currentTime = 0;
-        });
+        this.activeSounds.forEach(s => { s.pause(); s.currentTime = 0; });
         this.activeSounds = [];
     }
 
