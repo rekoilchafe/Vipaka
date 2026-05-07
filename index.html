@@ -9,6 +9,7 @@
     <style>
         :root {
             --glass-bg: rgba(255, 255, 255, 0.22);
+            --glass-border: rgba(255, 255, 255, 0.4);
             --text-main: #2c1810;
         }
 
@@ -25,8 +26,8 @@
             border-radius: 40px; 
             overflow: hidden; 
             box-shadow: 0 40px 100px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.4);
-            background: #243B55; 
+            border: 1px solid var(--glass-border);
+            background: transparent; 
         }
 
         canvas { display: block; cursor: pointer; }
@@ -41,10 +42,11 @@
             background: rgba(255, 255, 255, 0.95);
             padding: 40px; border-radius: 35px;
             pointer-events: auto; text-align: center;
-            width: 75%; color: var(--text-main);
+            width: 75%; box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            color: var(--text-main);
         }
 
-        h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 800; }
+        h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 800; letter-spacing: -1px; }
         p { font-size: 1rem; opacity: 0.8; margin-bottom: 25px; }
 
         button {
@@ -53,8 +55,6 @@
             border-radius: 100px; cursor: pointer;
         }
 
-        button:disabled { background: #ccc; cursor: not-allowed; }
-
         .score-pill {
             position: absolute; top: 30px;
             background: rgba(255,255,255,0.9);
@@ -62,7 +62,7 @@
             font-weight: 700; color: var(--text-main);
         }
 
-        .hidden { display: none; }
+        .hidden { display: none; opacity: 0; }
     </style>
 </head>
 <body>
@@ -74,12 +74,12 @@
         
         <div id="start-menu" class="glass-panel">
             <h1>VIPAKA</h1>
-            <p id="loading-msg">Loading Sprites...</p>
-            <button id="startBtn" disabled>Begin Journey</button>
+            <p>Master the Middle Path.<br>Find stillness among the trials of the spirit world.</p>
+            <button id="startBtn">Begin Journey</button>
         </div>
 
         <div id="over-menu" class="glass-panel hidden">
-            <h2 id="reason">Return to Breath</h2>
+            <h2 id="reason" style="margin:0">Return to Breath</h2>
             <p id="lore-text" style="font-size: 0.95rem; margin: 15px 0; font-style: italic;"></p>
             <button id="retryBtn">Try Again</button>
         </div>
@@ -88,7 +88,7 @@
 
 <script>
 /**
- * ASSET LOADING
+ * ASSET PRELOADING
  */
 const textures = {
     Mara: new Image(),
@@ -96,37 +96,21 @@ const textures = {
     Angulimala: new Image(),
     Player: new Image()
 };
-
-let loadedCount = 0;
-const totalAssets = 4;
-function assetLoaded() {
-    loadedCount++;
-    if (loadedCount === totalAssets) {
-        document.getElementById('startBtn').disabled = false;
-        document.getElementById('loading-msg').innerText = "Breathe deeply. Drift slowly.";
-    }
-}
-
-textures.Mara.onload = assetLoaded;
-textures.Devadatta.onload = assetLoaded;
-textures.Angulimala.onload = assetLoaded;
-textures.Player.onload = assetLoaded;
-
 textures.Mara.src = 'mararef1.png';
 textures.Devadatta.src = 'devdattaref1.png';
 textures.Angulimala.src = 'angulimalaref1.png';
 textures.Player.src = 'playerlotus.png';
 
 /**
- * REVERTED CONFIG: Frame-based but tuned for 30-60FPS mobile play
+ * ORIGINAL STABLE CONFIG
  */
 const CONFIG = {
-    gravity: 0.18,      
-    jump: -4.2,         
-    speed: 2.3,         
-    cloudSpeed: 0.5,
-    gap: 300,           
-    spawnRate: 140,     
+    gravity: 0.22,      
+    jump: -4.8,         
+    speed: 2.5,         
+    cloudSpeed: 0.4,
+    gap: 250,           
+    spawnRate: 100,     
     lotusMercy: 0.5,    
     states: { IDLE: 'IDLE', GATHER: 'GATHER', RELEASE: 'RELEASE' }
 };
@@ -162,11 +146,11 @@ class Lotus {
     }
     draw(ctx) {
         ctx.save();
-        // Simple outer glow for visibility
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "rgba(255, 255, 255, 0.6)";
+        ctx.translate(this.x, this.y);
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
         if (textures.Player.complete) {
-            ctx.drawImage(textures.Player, this.x - 40, this.y - 40, 80, 80);
+            ctx.drawImage(textures.Player, -40, -40, 80, 80);
         }
         ctx.restore();
     }
@@ -176,7 +160,7 @@ class Projectile {
     constructor(x, y, vName, yOffset = 0) {
         this.x = x; this.y = y + yOffset;
         this.vName = vName; this.radius = vName === 'Devadatta' ? 14 : 7;
-        let baseSpeed = (vName === 'Angulimala') ? 5.5 : 4.5;
+        let baseSpeed = (vName === 'Angulimala') ? 6 : 4.5;
         
         if (vName === 'Devadatta') {
             const angleRad = (Math.random() * 40 - 20) * (Math.PI / 180);
@@ -196,8 +180,9 @@ class Projectile {
     draw(ctx) {
         ctx.save();
         ctx.translate(this.x, this.y);
+        ctx.shadowBlur = 10;
         if (this.vName === 'Mara') {
-            ctx.fillStyle = "#ff4081";
+            ctx.fillStyle = "rgba(255, 64, 129, 0.8)";
             ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(-5, -5, -10, 0, 0, 8); ctx.bezierCurveTo(10, 0, 5, -5, 0, 0); ctx.fill();
         } else if (this.vName === 'Devadatta') {
             ctx.rotate(this.rotation);
@@ -216,13 +201,18 @@ class Projectile {
 
 class Villain {
     constructor(x, gapY, name) {
-        this.x = x; this.y = gapY + (CONFIG.gap / 2); this.name = name;
-        this.state = CONFIG.states.IDLE; this.timer = 0;
-        this.durations = { IDLE: 90, GATHER: 60, RELEASE: 30 };
+        this.x = x;
+        this.y = gapY + (CONFIG.gap / 2);
+        this.name = name;
+        this.state = CONFIG.states.IDLE;
+        this.timer = 0;
+        this.animFrame = 0;
+        this.durations = { IDLE: 90, GATHER: 50, RELEASE: 25 };
     }
     update(projArr) {
         this.x -= CONFIG.speed;
         this.timer++;
+        this.animFrame = Math.floor(this.timer / 2) % 8; // Resetting to faster 8-frame logic
         switch(this.state) {
             case CONFIG.states.IDLE: if(this.timer > this.durations.IDLE) this.transition(CONFIG.states.GATHER); break;
             case CONFIG.states.GATHER: if(this.timer > this.durations.GATHER) { this.transition(CONFIG.states.RELEASE); this.fire(projArr); } break;
@@ -272,7 +262,7 @@ class GameEngine {
     }
     resize() {
         this.canvas.width = Math.min(window.innerWidth * 0.95, 420);
-        this.canvas.height = Math.min(window.innerHeight * 0.85, 650);
+        this.canvas.height = Math.min(window.innerHeight * 0.85, 700);
     }
     initControls() {
         const act = (e) => { if(this.running) this.lotus.jump(); if(e.type === 'touchstart') e.preventDefault(); };
@@ -317,21 +307,25 @@ class GameEngine {
             if(!o.passed && o.x < this.lotus.x) { o.passed = true; this.score++; }
             if(o.x + o.width < 0) this.obstacles.splice(i, 1);
         });
+        
         this.villains.forEach(v => v.update(this.projectiles));
         this.projectiles.forEach((p, i) => {
             p.update();
             const d = Math.hypot(p.x - this.lotus.x, p.y - this.lotus.y);
-            if(d < (this.lotus.radius * CONFIG.lotusMercy) + p.radius) return this.stop("Peace Disturbed", "Thoughts arise and pass away.");
+            if(d < (this.lotus.radius * CONFIG.lotusMercy) + p.radius) {
+                const lore = { Mara: "Lust arises and dissolves. Stay centered.", Devadatta: "A heavy thought was held too long. Let it go.", Angulimala: "Anger breaks the peace. Return to stillness." };
+                return this.stop("Peace Disturbed", lore[p.vName]);
+            }
             if(p.x < -50) this.projectiles.splice(i, 1);
         });
         document.getElementById('scoreDisplay').innerText = `Equanimity: ${this.score}`;
         this.frame++;
     }
     draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         const sky = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
         sky.addColorStop(0, "#243B55"); sky.addColorStop(0.7, "#B43757"); sky.addColorStop(1, "#F8CDDA");
-        this.ctx.fillStyle = sky;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = sky; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.clouds.forEach(c => c.draw(this.ctx));
         this.obstacles.forEach(o => o.draw(this.ctx, this.canvas.height));
         this.villains.forEach(v => v.draw(this.ctx));
