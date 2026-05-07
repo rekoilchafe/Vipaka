@@ -77,7 +77,7 @@ const textures = { Mara: new Image(), Devadatta: new Image(), Angulimala: new Im
 const sounds = {
     bg: new Audio('JaymangalAtthagathaPiano.mp3'),
     mara: new Audio('marafx.mp3'),
-    angulimala: new Audio('marafx.mp3'),
+    angulimala: new Audio('angulimalafx.wav'), // Updated filename
     devadatta: new Audio('devdattafx.wav')
 };
 
@@ -156,7 +156,7 @@ class Villain {
         this.x = x; this.y = gapY + (CONFIG.gap / 2); this.name = name;
         this.state = CONFIG.states.IDLE; this.timer = 0;
         this.durations = { IDLE: 120, GATHER: 80, RELEASE: 40 };
-        this.activeSounds = []; // To track sounds triggered by this villain
+        this.activeSounds = [];
     }
 
     update(projs) {
@@ -164,8 +164,6 @@ class Villain {
         if(this.state === CONFIG.states.IDLE && this.timer > this.durations.IDLE) this.transition(CONFIG.states.GATHER);
         else if(this.state === CONFIG.states.GATHER && this.timer > this.durations.GATHER) { this.transition(CONFIG.states.RELEASE); this.fire(projs); }
         else if(this.state === CONFIG.states.RELEASE && this.timer > this.durations.RELEASE) this.transition(CONFIG.states.IDLE);
-        
-        // Clean up sound array if sounds have finished playing naturally
         this.activeSounds = this.activeSounds.filter(s => !s.ended);
     }
 
@@ -174,7 +172,7 @@ class Villain {
         if (sounds[soundKey]) {
             const sfx = sounds[soundKey].cloneNode();
             sfx.play().catch(() => {});
-            this.activeSounds.push(sfx); // Track the sound
+            this.activeSounds.push(sfx);
         }
 
         if(this.name === 'Mara') {
@@ -183,7 +181,6 @@ class Villain {
         } else projs.push(new Projectile(this.x, this.y, this.name));
     }
 
-    // New method to cut audio immediately
     stopAllSounds() {
         this.activeSounds.forEach(s => {
             s.pause();
@@ -251,7 +248,6 @@ class GameEngine {
         this.canvas.addEventListener('mousedown', act);
         document.getElementById('startBtn').onclick = () => { sounds.bg.play(); this.start(); };
         document.getElementById('retryBtn').onclick = () => {
-            // Stop any leftover SFX on game restart
             this.villains.forEach(v => v.stopAllSounds());
             this.start();
         };
@@ -288,7 +284,7 @@ class GameEngine {
         this.villains.forEach((v, i) => {
             v.update(this.projectiles);
             if(v.x < -100) {
-                v.stopAllSounds(); // AUTO-CUT SOUNDS HERE
+                v.stopAllSounds(); 
                 this.villains.splice(i, 1);
             }
         });
@@ -299,7 +295,6 @@ class GameEngine {
         });
 
         if(!this.running) {
-            // Cut sounds when you lose
             this.villains.forEach(v => v.stopAllSounds());
             document.getElementById('over-menu').classList.remove('hidden');
         }
