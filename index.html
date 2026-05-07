@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+       <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIPAKA</title>
+    <!-- PWA Manifest Link -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#B43757">
+    
     <style>
         :root {
             --glass-bg: rgba(255, 255, 255, 0.22);
@@ -19,9 +21,7 @@
             font-family: -apple-system, system-ui, sans-serif;
             display: flex; justify-content: center; align-items: center; height: 100vh;
             touch-action: none;
-        }
-
-        #game-container { 
+@@ -27,9 +24,8 @@
             position: relative; 
             border-radius: 40px; 
             overflow: hidden; 
@@ -31,56 +31,60 @@
         }
 
         canvas { display: block; cursor: pointer; }
-
-        #ui {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
+@@ -41,36 +37,30 @@
         }
 
         .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid var(--glass-border);
             padding: 40px; border-radius: 35px;
             pointer-events: auto; text-align: center;
             width: 75%; box-shadow: 0 15px 35px rgba(0,0,0,0.1);
             color: var(--text-main);
         }
 
-        h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 800; letter-spacing: -1px; }
-        p { font-size: 1rem; opacity: 0.8; margin-bottom: 25px; }
+
+
 
         button {
-            background: #2c1810; color: #fff; border: none;
+            background: #fff; color: #000; border: none;
             padding: 16px 38px; font-size: 1.1rem; font-weight: 600;
             border-radius: 100px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
         }
+
+        button:active { transform: scale(0.92); }
 
         .score-pill {
             position: absolute; top: 30px;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(12px);
             padding: 12px 28px; border-radius: 100px;
-            font-weight: 700; color: var(--text-main);
+            font-weight: 700; border: 1px solid var(--glass-border);
+            color: var(--text-main);
         }
 
         .hidden { display: none; opacity: 0; }
     </style>
 </head>
 <body>
-
-<div id="game-container">
+@@ -79,256 +69,142 @@
     <canvas id="gameCanvas"></canvas>
     <div id="ui">
         <div id="scoreDisplay" class="score-pill">Equanimity: 0</div>
         
         <div id="start-menu" class="glass-panel">
             <h1>VIPAKA</h1>
-            <p>Master the Middle Path.<br>Find stillness among the trials of the spirit world.</p>
-            <button id="startBtn">Begin Journey</button>
+            <p>Breathe deeply. Drift slowly.<br>True balance is found in the stillness of the mind.</p>
+            <button id="startBtn">Begin Meditation</button>
         </div>
 
         <div id="over-menu" class="glass-panel hidden">
-            <h2 id="reason" style="margin:0">Return to Breath</h2>
-            <p id="lore-text" style="font-size: 0.95rem; margin: 15px 0; font-style: italic;"></p>
+            <h2 id="reason" style="margin:0; font-size: 1.5rem;">Return to Breath</h2>
+            <p id="lore-text" style="font-size: 0.95rem; margin: 15px 0; opacity: 0.8;"></p>
             <button id="retryBtn">Try Again</button>
         </div>
     </div>
@@ -88,7 +92,7 @@
 
 <script>
 /**
- * ASSET PRELOADING
+ * PRELOAD ASSETS
  */
 const textures = {
     Mara: new Image(),
@@ -101,27 +105,26 @@ textures.Devadatta.src = 'devdattaref1.png';
 textures.Angulimala.src = 'angulimalaref1.png';
 textures.Player.src = 'playerlotus.png';
 
-/**
- * ORIGINAL STABLE CONFIG
- */
 const CONFIG = {
-    gravity: 0.22,      
-    jump: -4.8,         
-    speed: 2.5,         
-    cloudSpeed: 0.4,
-    gap: 250,           
-    spawnRate: 100,     
-    lotusMercy: 0.5,    
+    gravity: 0.12,
+    jump: -3.2,
+    speed: 1.6,
+    cloudSpeed: 0.3,
+    gap: 320,
+    spawnRate: 220,
+    lotusMercy: 0.45,
     states: { IDLE: 'IDLE', GATHER: 'GATHER', RELEASE: 'RELEASE' }
 };
 
 class Cloud {
-    constructor(canvasWidth) { this.reset(canvasWidth, true); }
+    constructor(canvasWidth, canvasHeight) {
+        this.reset(canvasWidth, true);
+    }
     reset(canvasWidth, initial = false) {
-        this.x = initial ? Math.random() * canvasWidth : canvasWidth + 120;
-        this.y = Math.random() * 250;
+        this.x = initial ? Math.random() * canvasWidth : canvasWidth + 100;
+        this.y = Math.random() * (window.innerHeight * 0.4);
         this.scale = 0.5 + Math.random() * 0.8;
-        this.opacity = 0.15 + Math.random() * 0.2;
+        this.opacity = 0.2 + Math.random() * 0.3;
     }
     update() { this.x -= CONFIG.cloudSpeed; }
     draw(ctx) {
@@ -131,69 +134,97 @@ class Cloud {
         ctx.fillStyle = `rgba(240, 230, 255, ${this.opacity})`;
         ctx.beginPath();
         ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.arc(25, -15, 25, 0, Math.PI * 2);
-        ctx.arc(50, 0, 30, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
+        ctx.arc(50, 0, 30, 0, Math.PI * 2); ctx.arc(25, 10, 20, 0, Math.PI * 2);
+        ctx.fill(); ctx.restore();
     }
 }
 
 class Lotus {
-    constructor() { this.radius = 22; this.reset(); }
+    constructor(ctx) {
+        this.ctx = ctx;
+        this.radius = 22; // Hitbox remains same for gameplay consistency
+        this.reset();
+    }
     reset() { this.x = 100; this.y = 350; this.velocity = 0; }
     jump() { this.velocity = CONFIG.jump; }
     update() {
         this.velocity += CONFIG.gravity;
         this.y += this.velocity;
     }
-    draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
-        if (textures.Player.complete) {
-            ctx.drawImage(textures.Player, -40, -40, 80, 80);
+    draw() {
+        this.ctx.save();
+        this.ctx.translate(this.x, this.y);
+        
+        // Shadow and Glow for the Player Sprite
+        this.ctx.shadowBlur = 20;
+        this.ctx.shadowColor = "rgba(255, 255, 255, 0.9)";
+        
+        const img = textures.Player;
+        if (img.complete) {
+            // Draw centered: player is scaled to roughly 80x80 for visibility
+            this.ctx.drawImage(img, -40, -40, 80, 80);
         }
-        ctx.restore();
+        
+        // Extra inner drop shadow for skeuomorphic depth
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+        this.ctx.shadowOffsetX = 4;
+        this.ctx.shadowOffsetY = 4;
+        
+        this.ctx.restore();
     }
 }
 
 class Projectile {
     constructor(x, y, vName, yOffset = 0) {
-        this.x = x; this.y = y + yOffset;
-        this.vName = vName; this.radius = vName === 'Devadatta' ? 14 : 7;
-        let baseSpeed = (vName === 'Angulimala') ? 6 : 4.5;
+        this.x = x;
+        this.y = y + yOffset;
+        this.vName = vName;
+        this.f = 0;
+        this.radius = vName === 'Devadatta' ? 14 : 7;
+        
+        let baseSpeed = (vName === 'Angulimala') ? 4.5 : 3.5;
         
         if (vName === 'Devadatta') {
-            const angleRad = (Math.random() * 40 - 20) * (Math.PI / 180);
+            const angleDeg = (Math.random() * 40 - 20); 
+            const angleRad = angleDeg * (Math.PI / 180);
             this.vx = -baseSpeed * Math.cos(angleRad);
             this.vy = baseSpeed * Math.sin(angleRad);
         } else {
             this.vx = -baseSpeed;
             this.vy = 0;
         }
-        this.rotation = 0;
+
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.05;
     }
     update() {
         this.x += this.vx;
         this.y += this.vy;
-        this.rotation += 0.05;
+        this.f++;
+        if(this.vName === 'Devadatta') this.rotation += this.rotationSpeed;
     }
+
     draw(ctx) {
         ctx.save();
         ctx.translate(this.x, this.y);
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 15;
         if (this.vName === 'Mara') {
             ctx.fillStyle = "rgba(255, 64, 129, 0.8)";
+            ctx.shadowColor = "rgba(255, 64, 129, 0.4)";
             ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(-5, -5, -10, 0, 0, 8); ctx.bezierCurveTo(10, 0, 5, -5, 0, 0); ctx.fill();
         } else if (this.vName === 'Devadatta') {
             ctx.rotate(this.rotation);
-            ctx.fillStyle = "#37474f";
-            ctx.fillRect(-this.radius, -this.radius, this.radius*2, this.radius*2);
+            ctx.fillStyle = "rgba(55, 71, 79, 0.8)"; ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+            ctx.beginPath(); ctx.roundRect(-this.radius, -this.radius, this.radius*2, this.radius*2, 4); ctx.fill();
         } else {
-            ctx.fillStyle = "#4e342e";
+            ctx.fillStyle = "rgba(78, 52, 46, 1)";
+            ctx.shadowColor = "rgba(255, 255, 255, 0.3)";
+            ctx.shadowBlur = 8;
             ctx.rotate(-Math.PI/2);
-            ctx.fillRect(-4, -9, 8, 14);
-            ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
-            ctx.fillStyle = "#fff"; ctx.fillRect(-2.5, -8.5, 5, 4);
+            ctx.beginPath(); ctx.roundRect(-4, -9, 8, 14, 4); ctx.fill();
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; ctx.lineWidth = 2; ctx.stroke();
+            ctx.fillStyle = "rgba(255, 240, 240, 0.9)"; ctx.fillRect(-2.5, -8.5, 5, 4);
         }
         ctx.restore();
     }
@@ -207,89 +238,119 @@ class Villain {
         this.state = CONFIG.states.IDLE;
         this.timer = 0;
         this.animFrame = 0;
-        this.durations = { IDLE: 90, GATHER: 50, RELEASE: 25 };
+        this.durations = { IDLE: 120, GATHER: 80, RELEASE: 40 };
     }
     update(projArr) {
         this.x -= CONFIG.speed;
         this.timer++;
-        this.animFrame = Math.floor(this.timer / 2) % 8; // Resetting to faster 8-frame logic
+        this.animFrame = Math.floor(this.timer / 4) % 8;
+        
         switch(this.state) {
-            case CONFIG.states.IDLE: if(this.timer > this.durations.IDLE) this.transition(CONFIG.states.GATHER); break;
-            case CONFIG.states.GATHER: if(this.timer > this.durations.GATHER) { this.transition(CONFIG.states.RELEASE); this.fire(projArr); } break;
-            case CONFIG.states.RELEASE: if(this.timer > this.durations.RELEASE) this.transition(CONFIG.states.IDLE); break;
+            case CONFIG.states.IDLE:
+                if(this.timer > this.durations.IDLE) this.transition(CONFIG.states.GATHER);
+                break;
+            case CONFIG.states.GATHER:
+                if(this.timer > this.durations.GATHER) {
+                    this.transition(CONFIG.states.RELEASE);
+                    this.fire(projArr);
+                }
+                break;
+            case CONFIG.states.RELEASE:
+                if(this.timer > this.durations.RELEASE) this.transition(CONFIG.states.IDLE);
+                break;
         }
     }
     fire(projArr) {
         if (this.name === 'Mara') {
             const count = Math.random() > 0.5 ? 3 : 2;
-            for(let i=0; i<count; i++) projArr.push(new Projectile(this.x, this.y, this.name, (i - (count-1)/2) * 40));
-        } else projArr.push(new Projectile(this.x, this.y, this.name));
+            for(let i=0; i<count; i++) {
+                projArr.push(new Projectile(this.x, this.y, this.name, (i - (count-1)/2) * 35));
+            }
+        } else {
+            projArr.push(new Projectile(this.x, this.y, this.name));
+        }
     }
     transition(s) { this.state = s; this.timer = 0; }
     draw(ctx) {
-        let frameX = this.state === CONFIG.states.GATHER ? 300 : (this.state === CONFIG.states.RELEASE ? 600 : 0);
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        const f = this.animFrame;
+        let s = 1, ox = 0, glow = 15;
+        
+        let frameX = 0; 
+        if (this.state === CONFIG.states.GATHER) frameX = 300;
+        if (this.state === CONFIG.states.RELEASE) frameX = 600;
+
+        if(this.state === CONFIG.states.IDLE) {
+            s = 1 + (Math.sin((f/8)*Math.PI*2)*0.03);
+            glow = 12 + f;
+        } else if(this.state === CONFIG.states.GATHER) {
+            ox = (f % 2 === 0) ? -0.4 : 0.4;
+            s = 1 + (f/8)*0.2;
+            glow = 18 + (f*2);
+            ctx.shadowColor = "rgba(255, 213, 79, 0.3)";
+        } else {
+            s = 1.3 - (f/8)*0.3;
+            glow = 30 - (f*3);
+            ctx.shadowColor = "#fff";
+        }
+        
+        ctx.shadowBlur = glow;
+        ctx.scale(s, s);
+
         const img = textures[this.name];
         if (img.complete) {
-            ctx.drawImage(img, frameX, 0, 300, 300, this.x - 45, this.y - 45, 90, 90);
+            ctx.drawImage(img, frameX, 0, 300, 300, -45 + ox, -45, 90, 90);
         }
+        ctx.restore();
     }
 }
 
 class Obstacle {
     constructor(w, h) {
-        this.x = w; this.width = 80;
+        this.x = w;
+        this.width = 80;
         this.gapY = Math.random() * (h - CONFIG.gap - 160) + 80;
         this.passed = false;
     }
     update() { this.x -= CONFIG.speed; }
     draw(ctx, h) {
-        ctx.fillStyle = "#34495e";
-        ctx.beginPath(); ctx.roundRect(this.x, 0, this.width, this.gapY, 15); ctx.fill();
-        ctx.beginPath(); ctx.roundRect(this.x, this.gapY + CONFIG.gap, this.width, h - (this.gapY + CONFIG.gap), 15); ctx.fill();
+        const pillar = (x, y, width, height) => {
+            const g = ctx.createLinearGradient(x, 0, x + width, 0);
+            g.addColorStop(0, "rgba(44, 62, 80, 0.9)"); 
+            g.addColorStop(0.5, "rgba(52, 73, 94, 0.9)"); 
+            g.addColorStop(1, "rgba(44, 62, 80, 0.9)");
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.roundRect(x, y, width, height, 15); ctx.fill();
+            ctx.strokeStyle = "rgba(255,255,255,0.12)"; ctx.lineWidth = 1; ctx.stroke();
+        };
+        pillar(this.x, -25, this.width, this.gapY + 25);
+        pillar(this.x, this.gapY + CONFIG.gap, this.width, h - (this.gapY + CONFIG.gap) + 25);
     }
 }
 
-class GameEngine {
-    constructor() {
+@@ -337,14 +213,14 @@
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.resize();
-        this.lotus = new Lotus();
-        this.clouds = [new Cloud(this.canvas.width), new Cloud(this.canvas.width), new Cloud(this.canvas.width)];
+        this.lotus = new Lotus(this.ctx);
+        this.clouds = [new Cloud(this.canvas.width, this.canvas.height), new Cloud(this.canvas.width, this.canvas.height), new Cloud(this.canvas.width, this.canvas.height)];
         this.running = false;
-        this.frame = 0;
         this.initControls();
     }
     resize() {
         this.canvas.width = Math.min(window.innerWidth * 0.95, 420);
-        this.canvas.height = Math.min(window.innerHeight * 0.85, 700);
+        this.canvas.height = Math.min(window.innerHeight * 0.88, 700);
     }
     initControls() {
         const act = (e) => { if(this.running) this.lotus.jump(); if(e.type === 'touchstart') e.preventDefault(); };
-        window.addEventListener('keydown', (e) => { if(e.code === 'Space') act(e); });
-        this.canvas.addEventListener('touchstart', act, {passive: false});
-        this.canvas.addEventListener('mousedown', act);
-        document.getElementById('startBtn').onclick = () => this.start();
-        document.getElementById('retryBtn').onclick = () => this.start();
-    }
-    start() {
-        this.obstacles = []; this.villains = []; this.projectiles = [];
-        this.score = 0; this.frame = 0; this.lotus.reset();
-        this.running = true;
-        document.getElementById('start-menu').classList.add('hidden');
-        document.getElementById('over-menu').classList.add('hidden');
-        this.loop();
-    }
-    stop(msg, lore) {
-        this.running = false;
-        document.getElementById('over-menu').classList.remove('hidden');
-        document.getElementById('reason').innerText = msg;
-        document.getElementById('lore-text').innerText = lore;
-    }
+@@ -371,58 +247,52 @@
     update() {
         this.lotus.update();
         this.clouds.forEach(c => { c.update(); if(c.x < -150) c.reset(this.canvas.width); });
-        if(this.lotus.y < 0 || this.lotus.y > this.canvas.height) return this.stop("Gently Return", "Mindfulness is returning to the center.");
+
+        if(this.lotus.y < 0 || this.lotus.y > this.canvas.height) 
+            return this.stop("Gently Return", "Mindfulness is simply returning to the center when we wander.");
         
         if(this.frame % CONFIG.spawnRate === 0) {
             const o = new Obstacle(this.canvas.width, this.canvas.height);
@@ -302,13 +363,15 @@ class GameEngine {
             o.update();
             const lr = this.lotus.radius * CONFIG.lotusMercy;
             if(this.lotus.x + lr > o.x && this.lotus.x - lr < o.x + o.width) {
-                if(this.lotus.y - lr < o.gapY || this.lotus.y + lr > o.gapY + CONFIG.gap) return this.stop("Be Gentle", "Rest in the middle.");
+                if(this.lotus.y - lr < o.gapY || this.lotus.y + lr > o.gapY + CONFIG.gap)
+                    return this.stop("Be Gentle", "The extremes are heavy. Rest in the middle.");
             }
             if(!o.passed && o.x < this.lotus.x) { o.passed = true; this.score++; }
             if(o.x + o.width < 0) this.obstacles.splice(i, 1);
         });
         
         this.villains.forEach(v => v.update(this.projectiles));
+        
         this.projectiles.forEach((p, i) => {
             p.update();
             const d = Math.hypot(p.x - this.lotus.x, p.y - this.lotus.y);
@@ -318,19 +381,22 @@ class GameEngine {
             }
             if(p.x < -50) this.projectiles.splice(i, 1);
         });
+        
         document.getElementById('scoreDisplay').innerText = `Equanimity: ${this.score}`;
         this.frame++;
     }
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        const sky = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        sky.addColorStop(0, "#243B55"); sky.addColorStop(0.7, "#B43757"); sky.addColorStop(1, "#F8CDDA");
-        this.ctx.fillStyle = sky; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+
+
+
+
         this.clouds.forEach(c => c.draw(this.ctx));
         this.obstacles.forEach(o => o.draw(this.ctx, this.canvas.height));
         this.villains.forEach(v => v.draw(this.ctx));
         this.projectiles.forEach(p => p.draw(this.ctx));
-        this.lotus.draw(this.ctx);
+        this.lotus.draw();
     }
     loop() {
         if(!this.running) return;
