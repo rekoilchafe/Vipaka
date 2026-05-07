@@ -8,45 +8,60 @@
     <meta name="theme-color" content="#B43757">
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-bg: rgba(255, 255, 255, 0.22);
             --text-main: #2c1810;
         }
+
         body {
             margin: 0; padding: 0; overflow: hidden;
-            background: #243B55; 
+            background: linear-gradient(to bottom, #243B55 0%, #B43757 70%, #F8CDDA 100%);
             font-family: -apple-system, system-ui, sans-serif;
             display: flex; justify-content: center; align-items: center; height: 100vh;
             touch-action: none;
         }
+
         #game-container { 
             position: relative; 
             border-radius: 40px; 
             overflow: hidden; 
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.4);
+            background: #243B55; 
         }
+
         canvas { display: block; cursor: pointer; }
+
         #ui {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
         }
+
         .glass-panel {
             background: rgba(255, 255, 255, 0.95);
-            padding: 30px; border-radius: 30px;
+            padding: 40px; border-radius: 35px;
             pointer-events: auto; text-align: center;
             width: 75%; color: var(--text-main);
         }
+
+        h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 800; }
+        p { font-size: 1rem; opacity: 0.8; margin-bottom: 25px; }
+
         button {
             background: #2c1810; color: #fff; border: none;
-            padding: 14px 30px; font-size: 1rem; font-weight: 600;
+            padding: 16px 38px; font-size: 1.1rem; font-weight: 600;
             border-radius: 100px; cursor: pointer;
         }
+
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
         .score-pill {
-            position: absolute; top: 20px;
+            position: absolute; top: 30px;
             background: rgba(255,255,255,0.9);
-            padding: 8px 20px; border-radius: 100px;
+            padding: 12px 28px; border-radius: 100px;
             font-weight: 700; color: var(--text-main);
         }
+
         .hidden { display: none; }
     </style>
 </head>
@@ -56,36 +71,63 @@
     <canvas id="gameCanvas"></canvas>
     <div id="ui">
         <div id="scoreDisplay" class="score-pill">Equanimity: 0</div>
+        
         <div id="start-menu" class="glass-panel">
             <h1>VIPAKA</h1>
-            <p>Breathe deeply. Drift slowly.</p>
-            <button id="startBtn">Begin Journey</button>
+            <p id="loading-msg">Loading Sprites...</p>
+            <button id="startBtn" disabled>Begin Journey</button>
         </div>
+
         <div id="over-menu" class="glass-panel hidden">
             <h2 id="reason">Return to Breath</h2>
-            <p id="lore-text" style="font-size: 0.85rem; margin: 15px 0; font-style: italic;"></p>
+            <p id="lore-text" style="font-size: 0.95rem; margin: 15px 0; font-style: italic;"></p>
             <button id="retryBtn">Try Again</button>
         </div>
     </div>
 </div>
 
 <script>
+/**
+ * ASSET LOADING
+ */
 const textures = {
-    Mara: new Image(), Devadatta: new Image(), Angulimala: new Image(), Player: new Image()
+    Mara: new Image(),
+    Devadatta: new Image(),
+    Angulimala: new Image(),
+    Player: new Image()
 };
+
+let loadedCount = 0;
+const totalAssets = 4;
+function assetLoaded() {
+    loadedCount++;
+    if (loadedCount === totalAssets) {
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('loading-msg').innerText = "Breathe deeply. Drift slowly.";
+    }
+}
+
+textures.Mara.onload = assetLoaded;
+textures.Devadatta.onload = assetLoaded;
+textures.Angulimala.onload = assetLoaded;
+textures.Player.onload = assetLoaded;
+
 textures.Mara.src = 'mararef1.png';
 textures.Devadatta.src = 'devdattaref1.png';
 textures.Angulimala.src = 'angulimalaref1.png';
 textures.Player.src = 'playerlotus.png';
 
+/**
+ * REVERTED CONFIG: Frame-based but tuned for 30-60FPS mobile play
+ */
 const CONFIG = {
-    gravity: 0.12, 
-    jump: -3.5, 
-    speed: 1.8, 
-    cloudSpeed: 0.3,
-    gap: 320, 
-    spawnRate: 200, 
-    lotusMercy: 0.45,
+    gravity: 0.18,      
+    jump: -4.2,         
+    speed: 2.3,         
+    cloudSpeed: 0.5,
+    gap: 300,           
+    spawnRate: 140,     
+    lotusMercy: 0.5,    
     states: { IDLE: 'IDLE', GATHER: 'GATHER', RELEASE: 'RELEASE' }
 };
 
@@ -95,9 +137,9 @@ class Cloud {
         this.x = initial ? Math.random() * canvasWidth : canvasWidth + 120;
         this.y = Math.random() * 250;
         this.scale = 0.5 + Math.random() * 0.8;
-        this.opacity = 0.1 + Math.random() * 0.2;
+        this.opacity = 0.15 + Math.random() * 0.2;
     }
-    update(dt) { this.x -= CONFIG.cloudSpeed * dt; }
+    update() { this.x -= CONFIG.cloudSpeed; }
     draw(ctx) {
         ctx.save();
         ctx.translate(this.x, this.y);
@@ -114,14 +156,19 @@ class Lotus {
     constructor() { this.radius = 22; this.reset(); }
     reset() { this.x = 100; this.y = 350; this.velocity = 0; }
     jump() { this.velocity = CONFIG.jump; }
-    update(dt) { 
-        this.velocity += CONFIG.gravity * dt; 
-        this.y += this.velocity * dt; 
+    update() {
+        this.velocity += CONFIG.gravity;
+        this.y += this.velocity;
     }
     draw(ctx) {
+        ctx.save();
+        // Simple outer glow for visibility
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "rgba(255, 255, 255, 0.6)";
         if (textures.Player.complete) {
             ctx.drawImage(textures.Player, this.x - 40, this.y - 40, 80, 80);
         }
+        ctx.restore();
     }
 }
 
@@ -129,18 +176,22 @@ class Projectile {
     constructor(x, y, vName, yOffset = 0) {
         this.x = x; this.y = y + yOffset;
         this.vName = vName; this.radius = vName === 'Devadatta' ? 14 : 7;
-        let baseSpeed = (vName === 'Angulimala') ? 4.5 : 3.5;
+        let baseSpeed = (vName === 'Angulimala') ? 5.5 : 4.5;
+        
         if (vName === 'Devadatta') {
             const angleRad = (Math.random() * 40 - 20) * (Math.PI / 180);
             this.vx = -baseSpeed * Math.cos(angleRad);
             this.vy = baseSpeed * Math.sin(angleRad);
-        } else { this.vx = -baseSpeed; this.vy = 0; }
+        } else {
+            this.vx = -baseSpeed;
+            this.vy = 0;
+        }
         this.rotation = 0;
     }
-    update(dt) { 
-        this.x += this.vx * dt; 
-        this.y += this.vy * dt; 
-        this.rotation += 0.05 * dt; 
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rotation += 0.05;
     }
     draw(ctx) {
         ctx.save();
@@ -156,6 +207,7 @@ class Projectile {
             ctx.fillStyle = "#4e342e";
             ctx.rotate(-Math.PI/2);
             ctx.fillRect(-4, -9, 8, 14);
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
             ctx.fillStyle = "#fff"; ctx.fillRect(-2.5, -8.5, 5, 4);
         }
         ctx.restore();
@@ -166,11 +218,11 @@ class Villain {
     constructor(x, gapY, name) {
         this.x = x; this.y = gapY + (CONFIG.gap / 2); this.name = name;
         this.state = CONFIG.states.IDLE; this.timer = 0;
-        this.durations = { IDLE: 120, GATHER: 80, RELEASE: 40 };
+        this.durations = { IDLE: 90, GATHER: 60, RELEASE: 30 };
     }
-    update(projArr, dt) {
-        this.x -= CONFIG.speed * dt; 
-        this.timer += dt;
+    update(projArr) {
+        this.x -= CONFIG.speed;
+        this.timer++;
         switch(this.state) {
             case CONFIG.states.IDLE: if(this.timer > this.durations.IDLE) this.transition(CONFIG.states.GATHER); break;
             case CONFIG.states.GATHER: if(this.timer > this.durations.GATHER) { this.transition(CONFIG.states.RELEASE); this.fire(projArr); } break;
@@ -199,7 +251,7 @@ class Obstacle {
         this.gapY = Math.random() * (h - CONFIG.gap - 160) + 80;
         this.passed = false;
     }
-    update(dt) { this.x -= CONFIG.speed * dt; }
+    update() { this.x -= CONFIG.speed; }
     draw(ctx, h) {
         ctx.fillStyle = "#34495e";
         ctx.beginPath(); ctx.roundRect(this.x, 0, this.width, this.gapY, 15); ctx.fill();
@@ -215,8 +267,7 @@ class GameEngine {
         this.lotus = new Lotus();
         this.clouds = [new Cloud(this.canvas.width), new Cloud(this.canvas.width), new Cloud(this.canvas.width)];
         this.running = false;
-        this.lastTime = 0;
-        this.spawnTimer = 0;
+        this.frame = 0;
         this.initControls();
     }
     resize() {
@@ -233,9 +284,8 @@ class GameEngine {
     }
     start() {
         this.obstacles = []; this.villains = []; this.projectiles = [];
-        this.score = 0; this.spawnTimer = 0; this.lotus.reset();
+        this.score = 0; this.frame = 0; this.lotus.reset();
         this.running = true;
-        this.lastTime = performance.now();
         document.getElementById('start-menu').classList.add('hidden');
         document.getElementById('over-menu').classList.add('hidden');
         this.loop();
@@ -246,23 +296,20 @@ class GameEngine {
         document.getElementById('reason').innerText = msg;
         document.getElementById('lore-text').innerText = lore;
     }
-    update(dt) {
-        this.lotus.update(dt);
-        this.clouds.forEach(c => { c.update(dt); if(c.x < -150) c.reset(this.canvas.width); });
-        
+    update() {
+        this.lotus.update();
+        this.clouds.forEach(c => { c.update(); if(c.x < -150) c.reset(this.canvas.width); });
         if(this.lotus.y < 0 || this.lotus.y > this.canvas.height) return this.stop("Gently Return", "Mindfulness is returning to the center.");
         
-        this.spawnTimer += dt;
-        if(this.spawnTimer >= CONFIG.spawnRate) {
-            this.spawnTimer = 0;
+        if(this.frame % CONFIG.spawnRate === 0) {
             const o = new Obstacle(this.canvas.width, this.canvas.height);
             this.obstacles.push(o);
             const vNames = ['Devadatta', 'Mara', 'Angulimala'];
             this.villains.push(new Villain(this.canvas.width + 120, o.gapY, vNames[Math.floor(Math.random()*3)]));
         }
-
+        
         this.obstacles.forEach((o, i) => {
-            o.update(dt);
+            o.update();
             const lr = this.lotus.radius * CONFIG.lotusMercy;
             if(this.lotus.x + lr > o.x && this.lotus.x - lr < o.x + o.width) {
                 if(this.lotus.y - lr < o.gapY || this.lotus.y + lr > o.gapY + CONFIG.gap) return this.stop("Be Gentle", "Rest in the middle.");
@@ -270,15 +317,15 @@ class GameEngine {
             if(!o.passed && o.x < this.lotus.x) { o.passed = true; this.score++; }
             if(o.x + o.width < 0) this.obstacles.splice(i, 1);
         });
-
-        this.villains.forEach(v => v.update(this.projectiles, dt));
+        this.villains.forEach(v => v.update(this.projectiles));
         this.projectiles.forEach((p, i) => {
-            p.update(dt);
+            p.update();
             const d = Math.hypot(p.x - this.lotus.x, p.y - this.lotus.y);
             if(d < (this.lotus.radius * CONFIG.lotusMercy) + p.radius) return this.stop("Peace Disturbed", "Thoughts arise and pass away.");
             if(p.x < -50) this.projectiles.splice(i, 1);
         });
         document.getElementById('scoreDisplay').innerText = `Equanimity: ${this.score}`;
+        this.frame++;
     }
     draw() {
         const sky = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
@@ -291,19 +338,10 @@ class GameEngine {
         this.projectiles.forEach(p => p.draw(this.ctx));
         this.lotus.draw(this.ctx);
     }
-    loop(currentTime) {
+    loop() {
         if(!this.running) return;
-        
-        // Calculate Delta Time (Targeting 60fps, so dt = 1.0 at 60fps)
-        let dt = (currentTime - this.lastTime) / 16.666;
-        this.lastTime = currentTime;
-
-        // Cap dt to prevent massive jumps if the tab loses focus
-        if (dt > 3) dt = 1; 
-
-        this.update(dt); 
-        this.draw();
-        requestAnimationFrame((time) => this.loop(time));
+        this.update(); this.draw();
+        requestAnimationFrame(() => this.loop());
     }
 }
 const game = new GameEngine();
