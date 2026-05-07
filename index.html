@@ -8,6 +8,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#B43757">
     <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.22);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-main: #2c1810;
+        }
+
         body {
             margin: 0; padding: 0; overflow: hidden;
             background: #243B55;
@@ -15,39 +21,64 @@
             display: flex; justify-content: center; align-items: center; height: 100vh;
             touch-action: none;
         }
+
         #game-container { 
             position: relative; 
             border-radius: 40px; 
             overflow: hidden; 
-            box-shadow: 0 40px 100px rgba(0,0,0,0.4);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+            border: 1px solid var(--glass-border);
         }
+
         canvas { 
             display: block; 
-            touch-action: none;
             image-rendering: -webkit-optimize-contrast;
         }
+
         #ui {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
         }
+
+        /* Glass UI Styles */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.96);
-            padding: 35px; border-radius: 35px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            padding: 40px; border-radius: 35px;
             pointer-events: auto; text-align: center;
-            width: 70%; color: #2c1810;
+            width: 75%; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            color: white; /* Contrast against twilight sky */
+            transition: opacity 0.4s ease;
         }
+
+        h1 { margin: 0 0 10px 0; font-size: 2.2rem; font-weight: 800; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        h2 { margin: 0; font-size: 1.4rem; color: #ffd54f; }
+        p { font-size: 1rem; line-height: 1.4; opacity: 0.9; margin-bottom: 25px; }
+
         button {
-            background: #2c1810; color: #fff; border: none;
-            padding: 16px 38px; font-size: 1.1rem; font-weight: 600;
+            background: #fff; color: #2c1810; border: none;
+            padding: 16px 38px; font-size: 1.1rem; font-weight: 700;
             border-radius: 100px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
         }
+
+        button:active { transform: scale(0.95); }
+        button:disabled { opacity: 0.5; }
+
         .score-pill {
             position: absolute; top: 40px;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
             padding: 10px 25px; border-radius: 100px;
-            font-weight: 700;
+            font-weight: 700; color: white;
         }
+
         .hidden { display: none; }
     </style>
 </head>
@@ -57,21 +88,24 @@
     <canvas id="gameCanvas"></canvas>
     <div id="ui">
         <div id="scoreDisplay" class="score-pill">Equanimity: 0</div>
+        
         <div id="start-menu" class="glass-panel">
             <h1>VIPAKA</h1>
-            <p id="load-msg">Aligning the senses...</p>
+            <p id="load-msg">Gathering the winds...</p>
             <button id="startBtn" disabled>Begin Journey</button>
         </div>
+
         <div id="over-menu" class="glass-panel hidden">
-            <h2 id="reason">Return to Breath</h2>
-            <button id="retryBtn">Try Again</button>
+            <h2 id="death-title">Return to Breath</h2>
+            <p id="death-msg" style="font-style: italic; font-weight: 300;"></p>
+            <button id="retryBtn">Return to Center</button>
         </div>
     </div>
 </div>
 
 <script>
 /**
- * ASSET MANAGEMENT
+ * ASSETS & MESSAGES
  */
 const textures = { Mara: new Image(), Devadatta: new Image(), Angulimala: new Image(), Player: new Image() };
 const sounds = {
@@ -81,22 +115,27 @@ const sounds = {
     devadatta: new Audio('devdattafx.wav')
 };
 
-sounds.bg.volume = 0.3;
-sounds.bg.loop = true;
+const LORE = {
+    Mara: { title: "Illusions Discovered", msg: "Mara's dance of desire clouded the vision. Release the heart's longing to see clearly." },
+    Angulimala: { title: "Peace Shattered", msg: "The ghosts of old anger struck swift. Meet the world with a soft hand, not a clenched fist." },
+    Devadatta: { title: "The Weight of Pride", msg: "Devadatta’s ego fell like a stone. A heavy mind cannot float on the celestial winds." },
+    Obstacle: { title: "Clinging to Extremes", msg: "The pillars of attachment closed in. The Middle Path is found only by letting go of the sides." },
+    Boundary: { title: "Mindfulness Drifted", msg: "The breath was lost to the void. Return your awareness to the silent center." }
+};
 
-let loadedAssets = 0;
+sounds.bg.volume = 0.3; sounds.bg.loop = true;
+
+let loaded = 0;
 const checkAssets = () => {
-    if(++loadedAssets === 4) {
+    if(++loaded === 4) {
         document.getElementById('startBtn').disabled = false;
-        document.getElementById('load-msg').innerText = "Sound and spirit are ready.";
+        document.getElementById('load-msg').innerText = "Sound and spirit are aligned.";
     }
 };
 
 textures.Mara.onload = textures.Devadatta.onload = textures.Angulimala.onload = textures.Player.onload = checkAssets;
-textures.Mara.src = 'mararef1.png'; 
-textures.Devadatta.src = 'devdattaref1.png'; 
-textures.Angulimala.src = 'angulimalaref1.png'; 
-textures.Player.src = 'playerlotus.png';
+textures.Mara.src = 'mararef1.png'; textures.Devadatta.src = 'devdattaref1.png'; 
+textures.Angulimala.src = 'angulimalaref1.png'; textures.Player.src = 'playerlotus.png';
 
 const CONFIG = {
     gravity: 0.15, jump: -3.8, speed: 1.8, cloudSpeed: 0.3,
@@ -104,6 +143,9 @@ const CONFIG = {
     states: { IDLE: 'IDLE', GATHER: 'GATHER', RELEASE: 'RELEASE' }
 };
 
+/**
+ * GAME ENTITIES
+ */
 class Cloud {
     constructor(w) { this.reset(w, true); }
     reset(w, init = false) {
@@ -115,9 +157,7 @@ class Cloud {
     update() { this.x -= CONFIG.cloudSpeed; }
     draw(ctx) {
         ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
-        ctx.beginPath();
-        ctx.arc(this.x | 0, this.y | 0, (30 * this.scale) | 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(this.x | 0, this.y | 0, (30 * this.scale) | 0, 0, Math.PI * 2); ctx.fill();
     }
 }
 
@@ -128,7 +168,7 @@ class Lotus {
     update() { this.velocity += CONFIG.gravity; this.y += this.velocity; }
     draw(ctx) {
         const x = this.x | 0, y = this.y | 0;
-        ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
         ctx.beginPath(); ctx.arc(x, y, 40, 0, Math.PI * 2); ctx.fill();
         if (textures.Player.complete) ctx.drawImage(textures.Player, x - 35, y - 35, 70, 70);
     }
@@ -155,11 +195,9 @@ class Villain {
     constructor(x, gapY, name) {
         this.x = x; this.y = gapY + (CONFIG.gap / 2); this.name = name;
         this.state = CONFIG.states.IDLE; this.timer = 0;
-        // Aggression Tweak: Reduced IDLE and GATHER to make them shoot sooner
         this.durations = { IDLE: 60, GATHER: 50, RELEASE: 40 };
         this.activeSounds = [];
     }
-
     update(projs) {
         this.x -= CONFIG.speed; this.timer++;
         if(this.state === CONFIG.states.IDLE && this.timer > this.durations.IDLE) this.transition(CONFIG.states.GATHER);
@@ -167,34 +205,23 @@ class Villain {
         else if(this.state === CONFIG.states.RELEASE && this.timer > this.durations.RELEASE) this.transition(CONFIG.states.IDLE);
         this.activeSounds = this.activeSounds.filter(s => !s.ended);
     }
-
     fire(projs) {
         const soundKey = this.name.toLowerCase();
         if (sounds[soundKey]) {
-            const sfx = sounds[soundKey].cloneNode();
-            sfx.play().catch(() => {});
+            const sfx = sounds[soundKey].cloneNode(); sfx.play().catch(() => {});
             this.activeSounds.push(sfx);
         }
-
         if(this.name === 'Mara') {
             const c = Math.random() > 0.5 ? 3 : 2;
             for(let i=0; i<c; i++) projs.push(new Projectile(this.x, this.y, this.name, (i - (c-1)/2)*35));
         } else projs.push(new Projectile(this.x, this.y, this.name));
     }
-
-    stopAllSounds() {
-        this.activeSounds.forEach(s => { s.pause(); s.currentTime = 0; });
-        this.activeSounds = [];
-    }
-
+    stopAllSounds() { this.activeSounds.forEach(s => { s.pause(); s.currentTime = 0; }); this.activeSounds = []; }
     transition(s) { this.state = s; this.timer = 0; }
-
     draw(ctx) {
         const x = this.x | 0, y = this.y | 0;
         let frameX = this.state === CONFIG.states.GATHER ? 75 : (this.state === CONFIG.states.RELEASE ? 150 : 0);
-        if (textures[this.name].complete) {
-            ctx.drawImage(textures[this.name], frameX, 0, 75, 75, x - 45, y - 45, 90, 90);
-        }
+        if (textures[this.name].complete) ctx.drawImage(textures[this.name], frameX, 0, 75, 75, x - 45, y - 45, 90, 90);
     }
 }
 
@@ -203,12 +230,15 @@ class Obstacle {
     update() { this.x -= CONFIG.speed; }
     draw(ctx, h) {
         const x = this.x | 0, gy = this.gapY | 0;
-        ctx.fillStyle = "#34495e";
+        ctx.fillStyle = "rgba(52, 73, 94, 0.9)";
         ctx.fillRect(x, 0, this.width, gy);
         ctx.fillRect(x, gy + CONFIG.gap, this.width, h - (gy + CONFIG.gap));
     }
 }
 
+/**
+ * ENGINE
+ */
 class GameEngine {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -236,8 +266,7 @@ class GameEngine {
         const osCtx = this.offscreenSky.getContext('2d');
         const sky = osCtx.createLinearGradient(0, 0, 0, this.virtualH * dpr);
         sky.addColorStop(0, "#243B55"); sky.addColorStop(0.7, "#B43757"); sky.addColorStop(1, "#F8CDDA");
-        osCtx.fillStyle = sky;
-        osCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        osCtx.fillStyle = sky; osCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     initControls() {
@@ -245,24 +274,29 @@ class GameEngine {
         this.canvas.addEventListener('touchstart', act, {passive: false});
         this.canvas.addEventListener('mousedown', act);
         document.getElementById('startBtn').onclick = () => { sounds.bg.play(); this.start(); };
-        document.getElementById('retryBtn').onclick = () => {
-            this.villains.forEach(v => v.stopAllSounds());
-            this.start();
-        };
+        document.getElementById('retryBtn').onclick = () => { this.villains.forEach(v => v.stopAllSounds()); this.start(); };
     }
 
     start() {
         this.obstacles = []; this.villains = []; this.projectiles = []; this.score = 0; this.frame = 0;
         this.lotus.reset(); this.running = true;
-        document.getElementById('start-menu').classList.add('hidden'); 
-        document.getElementById('over-menu').classList.add('hidden');
+        document.getElementById('start-menu').classList.add('hidden'); document.getElementById('over-menu').classList.add('hidden');
         this.loop();
+    }
+
+    stop(killerType) {
+        this.running = false;
+        this.villains.forEach(v => v.stopAllSounds());
+        const data = LORE[killerType];
+        document.getElementById('death-title').innerText = data.title;
+        document.getElementById('death-msg').innerText = data.msg;
+        document.getElementById('over-menu').classList.remove('hidden');
     }
 
     update() {
         this.lotus.update(); this.clouds.forEach(c => { c.update(); if(c.x < -150) c.reset(this.virtualW); });
         
-        if(this.lotus.y < 0 || this.lotus.y > this.virtualH) this.running = false;
+        if(this.lotus.y < 0 || this.lotus.y > this.virtualH) return this.stop("Boundary");
         
         if(++this.frame % CONFIG.spawnRate === 0) {
             const o = new Obstacle(this.virtualW, this.virtualH); this.obstacles.push(o);
@@ -273,7 +307,7 @@ class GameEngine {
         this.obstacles.forEach((o, i) => {
             o.update();
             if(this.lotus.x + 10 > o.x && this.lotus.x - 10 < o.x + o.width) {
-                if(this.lotus.y - 10 < o.gapY || this.lotus.y + 10 > o.gapY + CONFIG.gap) this.running = false;
+                if(this.lotus.y - 10 < o.gapY || this.lotus.y + 10 > o.gapY + CONFIG.gap) return this.stop("Obstacle");
             }
             if(!o.passed && o.x < this.lotus.x) { o.passed = true; this.score++; }
             if(o.x < -100) this.obstacles.splice(i, 1);
@@ -281,21 +315,13 @@ class GameEngine {
 
         this.villains.forEach((v, i) => {
             v.update(this.projectiles);
-            if(v.x < -100) {
-                v.stopAllSounds(); 
-                this.villains.splice(i, 1);
-            }
+            if(v.x < -100) { v.stopAllSounds(); this.villains.splice(i, 1); }
         });
 
         this.projectiles.forEach((p, i) => {
-            p.update(); if(Math.hypot(p.x - this.lotus.x, p.y - this.lotus.y) < 22) this.running = false;
+            p.update(); if(Math.hypot(p.x - this.lotus.x, p.y - this.lotus.y) < 22) return this.stop(p.vName);
             if(p.x < -50) this.projectiles.splice(i, 1);
         });
-
-        if(!this.running) {
-            this.villains.forEach(v => v.stopAllSounds());
-            document.getElementById('over-menu').classList.remove('hidden');
-        }
         document.getElementById('scoreDisplay').innerText = `Equanimity: ${this.score}`;
     }
 
