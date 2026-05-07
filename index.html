@@ -2,16 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>VIPAKA</title>
     <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#B43757">
     <style>
-        :root {
-            --glass-bg: rgba(255, 255, 255, 0.22);
-            --glass-border: rgba(255, 255, 255, 0.4);
-            --text-main: #2c1810;
-        }
         body {
             margin: 0; padding: 0; overflow: hidden;
             background: #243B55;
@@ -23,35 +19,34 @@
             position: relative; 
             border-radius: 40px; 
             overflow: hidden; 
-            box-shadow: 0 40px 100px rgba(0,0,0,0.3);
-            border: 1px solid var(--glass-border);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.4);
         }
-        canvas { display: block; cursor: pointer; image-rendering: auto; }
+        canvas { 
+            display: block; 
+            touch-action: none;
+            image-rendering: -webkit-optimize-contrast;
+        }
         #ui {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
         }
         .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px); /* Reduced for mobile speed */
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid var(--glass-border);
-            padding: 40px; border-radius: 35px;
+            background: rgba(255, 255, 255, 0.96);
+            padding: 35px; border-radius: 35px;
             pointer-events: auto; text-align: center;
-            width: 75%; color: var(--text-main);
+            width: 70%; color: #2c1810;
         }
         button {
-            background: #fff; color: #000; border: none;
+            background: #2c1810; color: #fff; border: none;
             padding: 16px 38px; font-size: 1.1rem; font-weight: 600;
-            border-radius: 100px; cursor: pointer;
+            border-radius: 100px;
         }
-        button:disabled { opacity: 0.5; }
         .score-pill {
-            position: absolute; top: 30px;
-            background: rgba(255,255,255,0.7);
-            padding: 12px 28px; border-radius: 100px;
-            font-weight: 700; color: var(--text-main);
+            position: absolute; top: 40px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 25px; border-radius: 100px;
+            font-weight: 700;
         }
         .hidden { display: none; }
     </style>
@@ -64,12 +59,10 @@
         <div id="scoreDisplay" class="score-pill">Equanimity: 0</div>
         <div id="start-menu" class="glass-panel">
             <h1>VIPAKA</h1>
-            <p id="load-msg">Gathering stillness...</p>
-            <button id="startBtn" disabled>Begin Journey</button>
+            <button id="startBtn" disabled>Begin</button>
         </div>
         <div id="over-menu" class="glass-panel hidden">
-            <h2 id="reason" style="margin:0">Return to Breath</h2>
-            <p id="lore-text" style="font-size: 0.9rem; margin: 15px 0; font-style: italic;"></p>
+            <h2 id="reason">Return to Breath</h2>
             <button id="retryBtn">Try Again</button>
         </div>
     </div>
@@ -78,13 +71,21 @@
 <script>
 const textures = { Mara: new Image(), Devadatta: new Image(), Angulimala: new Image(), Player: new Image() };
 let loaded = 0;
-const onLoad = () => { if(++loaded === 4) { document.getElementById('startBtn').disabled = false; document.getElementById('load-msg').innerText = "Breathe deeply. Drift slowly."; } };
+const onLoad = () => { if(++loaded === 4) document.getElementById('startBtn').disabled = false; };
 textures.Mara.onload = textures.Devadatta.onload = textures.Angulimala.onload = textures.Player.onload = onLoad;
 textures.Mara.src = 'mararef1.png'; textures.Devadatta.src = 'devdattaref1.png'; textures.Angulimala.src = 'angulimalaref1.png'; textures.Player.src = 'playerlotus.png';
 
+/**
+ * PHYSICS: Slightly increased to compensate for potential 30fps drops on iOS
+ */
 const CONFIG = {
-    gravity: 0.10, jump: -2.8, speed: 1.3, cloudSpeed: 0.2,
-    gap: 320, spawnRate: 260, lotusMercy: 0.5,
+    gravity: 0.15, 
+    jump: -3.8, 
+    speed: 1.8, 
+    cloudSpeed: 0.3,
+    gap: 300, 
+    spawnRate: 180, 
+    lotusMercy: 0.45,
     states: { IDLE: 'IDLE', GATHER: 'GATHER', RELEASE: 'RELEASE' }
 };
 
@@ -92,13 +93,13 @@ class Cloud {
     constructor(w) { this.reset(w, true); }
     reset(w, init = false) {
         this.x = init ? Math.random() * w : w + 100;
-        this.y = Math.random() * 250;
+        this.y = Math.random() * 200;
         this.scale = 0.5 + Math.random() * 0.8;
-        this.opacity = 0.15 + Math.random() * 0.15;
+        this.opacity = 0.15;
     }
     update() { this.x -= CONFIG.cloudSpeed; }
     draw(ctx) {
-        ctx.fillStyle = `rgba(240, 230, 255, ${this.opacity})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
         ctx.beginPath();
         ctx.arc(this.x | 0, this.y | 0, (30 * this.scale) | 0, 0, Math.PI * 2);
         ctx.fill();
@@ -112,41 +113,27 @@ class Lotus {
     update() { this.velocity += CONFIG.gravity; this.y += this.velocity; }
     draw(ctx) {
         const x = this.x | 0, y = this.y | 0;
-        // Optimized glow: Radial gradient is faster than shadowBlur
-        const g = ctx.createRadialGradient(x, y, 5, x, y, 40);
-        g.addColorStop(0, "rgba(255, 255, 255, 0.4)");
-        g.addColorStop(1, "rgba(255, 255, 255, 0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(x - 40, y - 40, 80, 80);
+        // Faster glow - no gradients, just a soft white circle
+        ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+        ctx.beginPath(); ctx.arc(x, y, 40, 0, Math.PI * 2); ctx.fill();
         if (textures.Player.complete) ctx.drawImage(textures.Player, x - 35, y - 35, 70, 70);
     }
 }
 
 class Projectile {
     constructor(x, y, vName, yOff = 0) {
-        this.x = x; this.y = y + yOff; this.vName = vName;
-        this.radius = vName === 'Devadatta' ? 12 : 6;
-        let baseS = vName === 'Angulimala' ? 3.5 : 2.5;
+        this.x = x; this.y = y + yOff; this.vName = vName; this.radius = vName === 'Devadatta' ? 12 : 6;
+        let baseS = vName === 'Angulimala' ? 4.5 : 3.5;
         if (vName === 'Devadatta') {
             const rad = (Math.random() * 30 - 15) * (Math.PI / 180);
             this.vx = -baseS * Math.cos(rad); this.vy = baseS * Math.sin(rad);
         } else { this.vx = -baseS; this.vy = 0; }
-        this.rot = 0;
     }
-    update() { this.x += this.vx; this.y += this.vy; this.rot += 0.05; }
+    update() { this.x += this.vx; this.y += this.vy; }
     draw(ctx) {
         const x = this.x | 0, y = this.y | 0;
-        ctx.save();
-        ctx.translate(x, y);
-        if (this.vName === 'Mara') {
-            ctx.fillStyle = "#ff4081";
-            ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(-5, -5, -10, 0, 0, 8); ctx.bezierCurveTo(10, 0, 5, -5, 0, 0); ctx.fill();
-        } else if (this.vName === 'Devadatta') {
-            ctx.rotate(this.rot); ctx.fillStyle = "#37474f"; ctx.fillRect(-8, -8, 16, 16);
-        } else {
-            ctx.rotate(-Math.PI/2); ctx.fillStyle = "#4e342e"; ctx.fillRect(-3, -7, 6, 12);
-        }
-        ctx.restore();
+        ctx.fillStyle = this.vName === 'Mara' ? "#ff4081" : "#37474f";
+        ctx.beginPath(); ctx.arc(x, y, this.radius, 0, Math.PI * 2); ctx.fill();
     }
 }
 
@@ -154,7 +141,7 @@ class Villain {
     constructor(x, gapY, name) {
         this.x = x; this.y = gapY + (CONFIG.gap / 2); this.name = name;
         this.state = CONFIG.states.IDLE; this.timer = 0;
-        this.durations = { IDLE: 140, GATHER: 100, RELEASE: 50 };
+        this.durations = { IDLE: 120, GATHER: 80, RELEASE: 40 };
     }
     update(projs) {
         this.x -= CONFIG.speed; this.timer++;
@@ -171,17 +158,10 @@ class Villain {
     transition(s) { this.state = s; this.timer = 0; }
     draw(ctx) {
         const x = this.x | 0, y = this.y | 0;
+        // Map 225x75 sprite sheet (75 per frame)
         let frameX = this.state === CONFIG.states.GATHER ? 75 : (this.state === CONFIG.states.RELEASE ? 150 : 0);
-        
-        // Fast Glow Circle
-        const g = ctx.createRadialGradient(x, y, 5, x, y, 50);
-        g.addColorStop(0, this.state === 'GATHER' ? "rgba(255, 183, 77, 0.2)" : "rgba(255, 255, 255, 0.1)");
-        g.addColorStop(1, "rgba(255, 255, 255, 0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(x - 50, y - 50, 100, 100);
-
         if (textures[this.name].complete) {
-            ctx.drawImage(textures[this.name], frameX, 0, 75, 75, x - 37, y - 37, 75, 75);
+            ctx.drawImage(textures[this.name], frameX, 0, 75, 75, x - 45, y - 45, 90, 90);
         }
     }
 }
@@ -192,70 +172,91 @@ class Obstacle {
     draw(ctx, h) {
         const x = this.x | 0, gy = this.gapY | 0;
         ctx.fillStyle = "#34495e";
-        ctx.beginPath(); ctx.roundRect(x, 0, this.width, gy, 15); ctx.fill();
-        ctx.beginPath(); ctx.roundRect(x, gy + CONFIG.gap, this.width, h - (gy + CONFIG.gap), 15); ctx.fill();
+        ctx.fillRect(x, 0, this.width, gy);
+        ctx.fillRect(x, gy + CONFIG.gap, this.width, h - (gy + CONFIG.gap));
     }
 }
 
 class GameEngine {
     constructor() {
-        this.canvas = document.getElementById('gameCanvas'); this.ctx = this.canvas.getContext('2d', { alpha: false });
-        this.resize(); this.lotus = new Lotus();
-        this.clouds = [new Cloud(this.canvas.width), new Cloud(this.canvas.width), new Cloud(this.canvas.width)];
-        this.running = false; this.initControls();
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d', { alpha: false }); // Disable alpha for max performance
+        this.offscreenSky = document.createElement('canvas');
+        this.setupRetina();
+        this.lotus = new Lotus();
+        this.clouds = [new Cloud(this.virtualW), new Cloud(this.virtualW), new Cloud(this.virtualW)];
+        this.running = false; 
+        this.initControls();
     }
-    resize() { this.canvas.width = Math.min(window.innerWidth * 0.95, 420); this.canvas.height = Math.min(window.innerHeight * 0.88, 700); }
+
+    setupRetina() {
+        const dpr = window.devicePixelRatio || 1;
+        this.virtualW = Math.min(window.innerWidth * 0.95, 420);
+        this.virtualH = Math.min(window.innerHeight * 0.88, 700);
+        
+        this.canvas.width = this.virtualW * dpr;
+        this.canvas.height = this.virtualH * dpr;
+        this.canvas.style.width = this.virtualW + 'px';
+        this.canvas.style.height = this.virtualH + 'px';
+        
+        this.ctx.scale(dpr, dpr);
+
+        // Cache the Twilight Sky
+        this.offscreenSky.width = this.canvas.width;
+        this.offscreenSky.height = this.canvas.height;
+        const osCtx = this.offscreenSky.getContext('2d');
+        const sky = osCtx.createLinearGradient(0, 0, 0, this.virtualH * dpr);
+        sky.addColorStop(0, "#243B55"); sky.addColorStop(0.7, "#B43757"); sky.addColorStop(1, "#F8CDDA");
+        osCtx.fillStyle = sky;
+        osCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
     initControls() {
-        const act = (e) => { if(this.running) this.lotus.jump(); if(e.type === 'touchstart') e.preventDefault(); };
-        window.addEventListener('keydown', (e) => { if(e.code === 'Space') act(e); });
+        const act = (e) => { if(this.running) this.lotus.jump(); e.preventDefault(); };
         this.canvas.addEventListener('touchstart', act, {passive: false});
         this.canvas.addEventListener('mousedown', act);
         document.getElementById('startBtn').onclick = () => this.start();
         document.getElementById('retryBtn').onclick = () => this.start();
     }
+
     start() {
         this.obstacles = []; this.villains = []; this.projectiles = []; this.score = 0; this.frame = 0;
         this.lotus.reset(); this.running = true;
         document.getElementById('start-menu').classList.add('hidden'); document.getElementById('over-menu').classList.add('hidden');
         this.loop();
     }
-    stop(msg, lore) {
-        this.running = false; document.getElementById('over-menu').classList.remove('hidden');
-        document.getElementById('reason').innerText = msg; document.getElementById('lore-text').innerText = lore;
-    }
+
     update() {
-        this.lotus.update(); this.clouds.forEach(c => { c.update(); if(c.x < -150) c.reset(this.canvas.width); });
-        if(this.lotus.y < 0 || this.lotus.y > this.canvas.height) return this.stop("Gently Return", "Equanimity is simply returning to center.");
+        this.lotus.update(); this.clouds.forEach(c => { c.update(); if(c.x < -150) c.reset(this.virtualW); });
+        if(this.lotus.y < 0 || this.lotus.y > this.virtualH) this.running = false;
         if(++this.frame % CONFIG.spawnRate === 0) {
-            const o = new Obstacle(this.canvas.width, this.canvas.height); this.obstacles.push(o);
+            const o = new Obstacle(this.virtualW, this.virtualH); this.obstacles.push(o);
             const vNames = ['Devadatta', 'Mara', 'Angulimala'];
-            this.villains.push(new Villain(this.canvas.width + 120, o.gapY, vNames[Math.floor(Math.random()*3)]));
+            this.villains.push(new Villain(this.virtualW + 100, o.gapY, vNames[Math.floor(Math.random()*3)]));
         }
         this.obstacles.forEach((o, i) => {
             o.update();
-            const lr = 10;
-            if(this.lotus.x + lr > o.x && this.lotus.x - lr < o.x + o.width) {
-                if(this.lotus.y - lr < o.gapY || this.lotus.y + lr > o.gapY + CONFIG.gap) return this.stop("Be Gentle", "The extremes are heavy.");
+            if(this.lotus.x + 10 > o.x && this.lotus.x - 10 < o.x + o.width) {
+                if(this.lotus.y - 10 < o.gapY || this.lotus.y + 10 > o.gapY + CONFIG.gap) this.running = false;
             }
             if(!o.passed && o.x < this.lotus.x) { o.passed = true; this.score++; }
-            if(o.x + o.width < -100) this.obstacles.splice(i, 1);
+            if(o.x < -100) this.obstacles.splice(i, 1);
         });
         this.villains.forEach(v => v.update(this.projectiles));
         this.projectiles.forEach((p, i) => {
-            p.update(); if(Math.hypot(p.x - this.lotus.x, p.y - this.lotus.y) < 20) return this.stop("Peace Disturbed", "Thoughts arise and dissolve.");
+            p.update(); if(Math.hypot(p.x - this.lotus.x, p.y - this.lotus.y) < 22) this.running = false;
             if(p.x < -50) this.projectiles.splice(i, 1);
         });
+        if(!this.running) document.getElementById('over-menu').classList.remove('hidden');
         document.getElementById('scoreDisplay').innerText = `Equanimity: ${this.score}`;
     }
-    draw() {
-        // Fast Gradient Background
-        const sky = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        sky.addColorStop(0, "#243B55"); sky.addColorStop(0.7, "#B43757"); sky.addColorStop(1, "#F8CDDA");
-        this.ctx.fillStyle = sky;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+    draw() {
+        // DRAW PRE-CACHED SKY (The fastest operation)
+        this.ctx.drawImage(this.offscreenSky, 0, 0, this.canvas.width, this.canvas.height, 0, 0, this.virtualW, this.virtualH);
+        
         this.clouds.forEach(c => c.draw(this.ctx));
-        this.obstacles.forEach(o => o.draw(this.ctx, this.canvas.height));
+        this.obstacles.forEach(o => o.draw(this.ctx, this.virtualH));
         this.villains.forEach(v => v.draw(this.ctx));
         this.projectiles.forEach(p => p.draw(this.ctx));
         this.lotus.draw(this.ctx);
