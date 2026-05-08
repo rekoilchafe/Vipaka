@@ -58,20 +58,38 @@
         h2 { margin: 0; font-size: 1.4rem; color: #ffd54f; }
         p { font-size: 1rem; line-height: 1.4; opacity: 0.9; margin-bottom: 20px; }
 
+        /* Enhanced Credits Styling */
         .credits {
-            font-size: 0.75rem;
-            margin-top: 25px;
-            opacity: 0.6;
-            line-height: 1.4;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .credits-main {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .credits-tech {
+            display: block;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            opacity: 0.5;
+            letter-spacing: 1.5px;
         }
 
         .credits a {
             color: #ffd54f;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 700;
+            transition: opacity 0.2s;
         }
+
+        .credits a:active { opacity: 0.7; }
 
         button {
             background: #fff; color: #2c1810; border: none;
@@ -108,8 +126,8 @@
             <p id="load-msg">Gathering the winds...</p>
             <button id="startBtn" disabled>Begin Journey</button>
             <div class="credits">
-                Game made with love by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a><br>
-                in html js and help from Gemini.
+                <span class="credits-main">Made with ❤️ by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a></span>
+                <span class="credits-tech">HTML5 • JS • GEMINI AI</span>
             </div>
         </div>
 
@@ -118,8 +136,8 @@
             <p id="death-msg" style="font-style: italic; font-weight: 300;"></p>
             <button id="retryBtn">Return to Center</button>
             <div class="credits">
-                Game made with love by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a><br>
-                in html js and help from Gemini.
+                <span class="credits-main">Made with ❤️ by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a></span>
+                <span class="credits-tech">HTML5 • JS • GEMINI AI</span>
             </div>
         </div>
     </div>
