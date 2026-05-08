@@ -42,15 +42,36 @@
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid var(--glass-border);
-            padding: 30px; border-radius: 35px;
+            padding: 25px; border-radius: 35px;
             pointer-events: auto; text-align: center;
-            width: 75%; color: white;
+            width: 80%; color: white;
         }
 
-        h1 { margin: 0 0 10px 0; font-size: 2.2rem; font-weight: 800; letter-spacing: 2px; }
+        h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 800; letter-spacing: 2px; }
         
-        /* Name Input Styling */
-        .name-input-wrap { margin-bottom: 20px; }
+        /* Cheat Sheet Styling */
+        .guide {
+            text-align: left;
+            font-size: 0.75rem;
+            background: rgba(0,0,0,0.15);
+            padding: 15px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .guide-title { 
+            display: block; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            margin-bottom: 8px; 
+            color: #ffd54f; 
+            text-align: center;
+        }
+        .guide ul { list-style: none; padding: 0; margin: 0; }
+        .guide li { margin-bottom: 4px; display: flex; align-items: center; }
+        .guide li span { margin-right: 8px; font-size: 1rem; }
+
+        .name-input-wrap { margin-bottom: 15px; }
         input[type="text"] {
             background: rgba(255,255,255,0.2);
             border: 1px solid rgba(255,255,255,0.5);
@@ -58,15 +79,14 @@
             padding: 10px 20px;
             color: white;
             text-align: center;
-            font-size: 1rem;
+            font-size: 0.9rem;
             width: 80%;
             outline: none;
         }
-        input::placeholder { color: rgba(255,255,255,0.6); }
 
         button {
             background: #fff; color: #2c1810; border: none;
-            padding: 14px 35px; font-size: 1.1rem; font-weight: 700;
+            padding: 12px 30px; font-size: 1rem; font-weight: 700;
             border-radius: 100px; cursor: pointer;
         }
 
@@ -81,13 +101,13 @@
             backdrop-filter: blur(15px);
             border: 1px solid var(--glass-border);
             padding: 8px 20px; border-radius: 100px;
-            font-weight: 700; color: white; font-size: 0.9rem;
+            font-weight: 700; color: white; font-size: 0.8rem;
         }
 
         .credits {
-            margin-top: 25px; padding-top: 15px;
+            margin-top: 20px; padding-top: 10px;
             border-top: 1px solid rgba(255,255,255,0.15);
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
         .credits a { color: #ffd54f; text-decoration: none; font-weight: 700; }
 
@@ -101,25 +121,38 @@
     <div id="ui">
         <div class="stats-wrap">
             <div id="scoreDisplay" class="score-pill">Equanimity: 0</div>
-            <div id="bestDisplay" class="score-pill" style="font-size: 0.7rem; opacity: 0.8;">Best: 0 (Upasak)</div>
+            <div id="bestDisplay" class="score-pill" style="font-size: 0.65rem; opacity: 0.8;">Best: 0 (Upasak)</div>
         </div>
         
         <div id="start-menu" class="glass-panel">
             <h1>VIPAKA</h1>
+            
             <div class="name-input-wrap">
-                <input type="text" id="playerName" placeholder="Enter Name..." maxlength="12">
+                <input type="text" id="playerName" placeholder="Upasak Name..." maxlength="12">
             </div>
-            <p id="load-msg" style="font-size: 0.9rem;">Gathering the winds...</p>
+
+            <div class="guide">
+                <span class="guide-title">The Path of Practice</span>
+                <ul>
+                    <li><span>🧘</span> Tap to Float. Release to Drift.</li>
+                    <li><span>⚖️</span> Maintain rhythm to stay in the Center.</li>
+                    <li><span>🚫</span> Avoid Mara (Lust) & Angulimala (Anger).</li>
+                    <li><span>🚫</span> Avoid Devadatta (Pride) & Obstacles.</li>
+                </ul>
+            </div>
+
+            <p id="load-msg" style="font-size: 0.8rem; margin-bottom: 15px;">Gathering the winds...</p>
             <button id="startBtn" disabled>Begin Journey</button>
+
             <div class="credits">
-                <span>Made with ❤️ by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a></span><br>
-                <span style="font-size: 0.6rem; opacity: 0.5; letter-spacing: 1px;">HTML5 • JS • GEMINI AI</span>
+                <span style="opacity:0.9">Made with ❤️ by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a></span><br>
+                <span style="font-size: 0.55rem; opacity: 0.5; letter-spacing: 1.5px;">HTML5 • JS • GEMINI AI</span>
             </div>
         </div>
 
         <div id="over-menu" class="glass-panel hidden">
-            <h2 id="death-title" style="color: #ffd54f; margin-bottom: 10px;">Return to Breath</h2>
-            <p id="death-msg" style="font-style: italic; font-weight: 300; font-size: 0.9rem;"></p>
+            <h2 id="death-title" style="color: #ffd54f; margin-bottom: 5px;">Return to Breath</h2>
+            <p id="death-msg" style="font-style: italic; font-weight: 300; font-size: 0.85rem; margin-bottom: 20px;"></p>
             <button id="retryBtn">Return to Center</button>
             <div class="credits">
                 <span>Made with ❤️ by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a></span>
@@ -148,7 +181,6 @@ const LORE = {
     Boundary: { title: "Mindfulness Drifted", msg: "Breath was lost to the void. Return awareness to the center." }
 };
 
-// Persistence Logic
 let bestScore = localStorage.getItem('vipaka_best_score') || 0;
 let bestName = localStorage.getItem('vipaka_best_name') || "Upasak";
 
@@ -158,7 +190,7 @@ let loaded = 0;
 const checkAssets = () => {
     if(++loaded === 4) {
         document.getElementById('startBtn').disabled = false;
-        document.getElementById('load-msg').innerText = "Sound and spirit are aligned.";
+        document.getElementById('load-msg').innerText = "Spirit is aligned.";
         updateBestDisplay();
     }
 };
@@ -178,7 +210,7 @@ const CONFIG = {
 };
 
 /**
- * ENTITIES
+ * ENGINE CLASSES
  */
 class Cloud {
     constructor(w) { this.reset(w, true); }
@@ -270,9 +302,6 @@ class Obstacle {
     }
 }
 
-/**
- * ENGINE
- */
 class GameEngine {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -281,10 +310,8 @@ class GameEngine {
         this.setupRetina();
         this.lotus = new Lotus();
         this.clouds = [new Cloud(this.virtualW), new Cloud(this.virtualW), new Cloud(this.virtualW)];
-        this.running = false; 
-        this.initControls();
+        this.running = false; this.initControls();
     }
-
     setupRetina() {
         const dpr = window.devicePixelRatio || 1;
         this.virtualW = Math.min(window.innerWidth * 0.95, 420);
@@ -294,7 +321,6 @@ class GameEngine {
         this.canvas.style.width = this.virtualW + 'px';
         this.canvas.style.height = this.virtualH + 'px';
         this.ctx.scale(dpr, dpr);
-
         this.offscreenSky.width = this.canvas.width;
         this.offscreenSky.height = this.canvas.height;
         const osCtx = this.offscreenSky.getContext('2d');
@@ -302,7 +328,6 @@ class GameEngine {
         sky.addColorStop(0, "#243B55"); sky.addColorStop(0.7, "#B43757"); sky.addColorStop(1, "#F8CDDA");
         osCtx.fillStyle = sky; osCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
-
     initControls() {
         const act = (e) => { if(this.running) this.lotus.jump(); e.preventDefault(); };
         this.canvas.addEventListener('touchstart', act, {passive: false});
@@ -310,52 +335,38 @@ class GameEngine {
         document.getElementById('startBtn').onclick = () => { 
             const input = document.getElementById('playerName').value.trim();
             this.currentUpasak = input || "Upasak";
-            sounds.bg.play(); 
-            this.start(); 
+            sounds.bg.play(); this.start(); 
         };
-        document.getElementById('retryBtn').onclick = () => { 
-            this.villains.forEach(v => v.stopAllSounds()); 
-            this.start(); 
-        };
+        document.getElementById('retryBtn').onclick = () => { this.villains.forEach(v => v.stopAllSounds()); this.start(); };
     }
-
     start() {
         this.obstacles = []; this.villains = []; this.projectiles = []; this.score = 0; this.frame = 0;
         this.lotus.reset(); this.running = true;
-        document.getElementById('start-menu').classList.add('hidden'); 
-        document.getElementById('over-menu').classList.add('hidden');
+        document.getElementById('start-menu').classList.add('hidden'); document.getElementById('over-menu').classList.add('hidden');
         this.loop();
     }
-
     stop(killerType) {
         this.running = false;
         this.villains.forEach(v => v.stopAllSounds());
-        
-        // Handle High Score
         if (this.score > bestScore) {
-            bestScore = this.score;
-            bestName = this.currentUpasak;
+            bestScore = this.score; bestName = this.currentUpasak;
             localStorage.setItem('vipaka_best_score', bestScore);
             localStorage.setItem('vipaka_best_name', bestName);
             updateBestDisplay();
         }
-
         const data = LORE[killerType];
         document.getElementById('death-title').innerText = data.title;
         document.getElementById('death-msg').innerText = data.msg;
         document.getElementById('over-menu').classList.remove('hidden');
     }
-
     update() {
         this.lotus.update(); this.clouds.forEach(c => { c.update(); if(c.x < -150) c.reset(this.virtualW); });
         if(this.lotus.y < 0 || this.lotus.y > this.virtualH) return this.stop("Boundary");
-        
         if(++this.frame % CONFIG.spawnRate === 0) {
             const o = new Obstacle(this.virtualW, this.virtualH); this.obstacles.push(o);
             const vNames = ['Devadatta', 'Mara', 'Angulimala'];
             this.villains.push(new Villain(this.virtualW + 100, o.gapY, vNames[Math.floor(Math.random()*3)]));
         }
-
         this.obstacles.forEach((o, i) => {
             o.update();
             if(this.lotus.x + 10 > o.x && this.lotus.x - 10 < o.x + o.width) {
@@ -364,19 +375,16 @@ class GameEngine {
             if(!o.passed && o.x < this.lotus.x) { o.passed = true; this.score++; }
             if(o.x < -100) this.obstacles.splice(i, 1);
         });
-
         this.villains.forEach((v, i) => {
             v.update(this.projectiles);
             if(v.x < -100) { v.stopAllSounds(); this.villains.splice(i, 1); }
         });
-
         this.projectiles.forEach((p, i) => {
             p.update(); if(Math.hypot(p.x - this.lotus.x, p.y - this.lotus.y) < 22) return this.stop(p.vName);
             if(p.x < -50) this.projectiles.splice(i, 1);
         });
         document.getElementById('scoreDisplay').innerText = `Equanimity: ${this.score}`;
     }
-
     draw() {
         this.ctx.drawImage(this.offscreenSky, 0, 0, this.canvas.width, this.canvas.height, 0, 0, this.virtualW, this.virtualH);
         this.clouds.forEach(c => c.draw(this.ctx));
