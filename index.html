@@ -49,23 +49,13 @@
 
         h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 800; letter-spacing: 2px; }
         
-        /* Cheat Sheet Styling */
         .guide {
-            text-align: left;
-            font-size: 0.75rem;
-            background: rgba(0,0,0,0.15);
-            padding: 15px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            line-height: 1.5;
+            text-align: left; font-size: 0.75rem; background: rgba(0,0,0,0.15);
+            padding: 15px; border-radius: 20px; margin-bottom: 20px; line-height: 1.5;
         }
         .guide-title { 
-            display: block; 
-            font-weight: 800; 
-            text-transform: uppercase; 
-            margin-bottom: 8px; 
-            color: #ffd54f; 
-            text-align: center;
+            display: block; font-weight: 800; text-transform: uppercase; 
+            margin-bottom: 8px; color: #ffd54f; text-align: center;
         }
         .guide ul { list-style: none; padding: 0; margin: 0; }
         .guide li { margin-bottom: 4px; display: flex; align-items: center; }
@@ -73,15 +63,9 @@
 
         .name-input-wrap { margin-bottom: 15px; }
         input[type="text"] {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.5);
-            border-radius: 100px;
-            padding: 10px 20px;
-            color: white;
-            text-align: center;
-            font-size: 0.9rem;
-            width: 80%;
-            outline: none;
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 100px; padding: 10px 20px; color: white;
+            text-align: center; font-size: 0.9rem; width: 80%; outline: none;
         }
 
         button {
@@ -92,25 +76,20 @@
 
         .stats-wrap {
             position: absolute; top: 40px;
-            display: flex; flex-direction: column; align-items: center; gap: 8px;
-            width: 100%;
+            display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%;
         }
 
         .score-pill {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--glass-border);
-            padding: 8px 20px; border-radius: 100px;
-            font-weight: 700; color: white; font-size: 0.8rem;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border); padding: 8px 20px; 
+            border-radius: 100px; font-weight: 700; color: white; font-size: 0.8rem;
         }
 
         .credits {
             margin-top: 20px; padding-top: 10px;
-            border-top: 1px solid rgba(255,255,255,0.15);
-            font-size: 0.7rem;
+            border-top: 1px solid rgba(255,255,255,0.15); font-size: 0.7rem;
         }
         .credits a { color: #ffd54f; text-decoration: none; font-weight: 700; }
-
         .hidden { display: none; }
     </style>
 </head>
@@ -121,16 +100,14 @@
     <div id="ui">
         <div class="stats-wrap">
             <div id="scoreDisplay" class="score-pill">Equanimity: 0</div>
-            <div id="bestDisplay" class="score-pill" style="font-size: 0.65rem; opacity: 0.8;">Best: 0 (Upasak)</div>
+            <div id="bestDisplay" class="score-pill" style="font-size: 0.65rem; opacity: 0.8;">Best: 0 (Upasaks)</div>
         </div>
         
         <div id="start-menu" class="glass-panel">
             <h1>VIPAKA</h1>
-            
             <div class="name-input-wrap">
                 <input type="text" id="playerName" placeholder="Upasak Name..." maxlength="12">
             </div>
-
             <div class="guide">
                 <span class="guide-title">The Path of Practice</span>
                 <ul>
@@ -140,10 +117,8 @@
                     <li><span>🚫</span> Avoid Devadatta (Pride) & Obstacles.</li>
                 </ul>
             </div>
-
             <p id="load-msg" style="font-size: 0.8rem; margin-bottom: 15px;">Gathering the winds...</p>
             <button id="startBtn" disabled>Begin Journey</button>
-
             <div class="credits">
                 <span style="opacity:0.9">Made with ❤️ by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a></span><br>
                 <span style="font-size: 0.55rem; opacity: 0.5; letter-spacing: 1.5px;">HTML5 • JS • GEMINI AI</span>
@@ -163,7 +138,7 @@
 
 <script>
 /**
- * ASSETS & DATA
+ * CORE ASSETS
  */
 const textures = { Mara: new Image(), Devadatta: new Image(), Angulimala: new Image(), Player: new Image() };
 const sounds = {
@@ -181,36 +156,13 @@ const LORE = {
     Boundary: { title: "Mindfulness Drifted", msg: "Breath was lost to the void. Return awareness to the center." }
 };
 
-let bestScore = localStorage.getItem('vipaka_best_score') || 0;
+let bestScore = parseInt(localStorage.getItem('vipaka_best_score')) || 0;
 let bestName = localStorage.getItem('vipaka_best_name') || "Upasak";
 
 sounds.bg.volume = 0.3; sounds.bg.loop = true;
 
-let loaded = 0;
-const checkAssets = () => {
-    if(++loaded === 4) {
-        document.getElementById('startBtn').disabled = false;
-        document.getElementById('load-msg').innerText = "Spirit is aligned.";
-        updateBestDisplay();
-    }
-};
-
-function updateBestDisplay() {
-    document.getElementById('bestDisplay').innerText = `Best: ${bestScore} (${bestName})`;
-}
-
-textures.Mara.onload = textures.Devadatta.onload = textures.Angulimala.onload = textures.Player.onload = checkAssets;
-textures.Mara.src = 'mararef1.png'; textures.Devadatta.src = 'devdattaref1.png'; 
-textures.Angulimala.src = 'angulimalaref1.png'; textures.Player.src = 'playerlotus.png';
-
-const CONFIG = {
-    gravity: 0.15, jump: -3.8, speed: 1.8, cloudSpeed: 0.3,
-    gap: 300, spawnRate: 180, lotusMercy: 0.45,
-    states: { IDLE: 'IDLE', GATHER: 'GATHER', RELEASE: 'RELEASE' }
-};
-
 /**
- * ENGINE CLASSES
+ * OPTIMIZED CLASSES
  */
 class Cloud {
     constructor(w) { this.reset(w, true); }
@@ -220,7 +172,7 @@ class Cloud {
         this.scale = 0.5 + Math.random() * 0.8;
         this.opacity = 0.15;
     }
-    update() { this.x -= CONFIG.cloudSpeed; }
+    update(speed) { this.x -= speed; }
     draw(ctx) {
         ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
         ctx.beginPath(); ctx.arc(this.x | 0, this.y | 0, (30 * this.scale) | 0, 0, Math.PI * 2); ctx.fill();
@@ -230,19 +182,21 @@ class Cloud {
 class Lotus {
     constructor() { this.radius = 20; this.reset(); }
     reset() { this.x = 100; this.y = 350; this.velocity = 0; }
-    jump() { this.velocity = CONFIG.jump; }
-    update() { this.velocity += CONFIG.gravity; this.y += this.velocity; }
-    draw(ctx) {
+    jump(p) { this.velocity = p; }
+    update(g) { this.velocity += g; this.y += this.velocity; }
+    draw(ctx, img) {
         const x = this.x | 0, y = this.y | 0;
         ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
         ctx.beginPath(); ctx.arc(x, y, 40, 0, Math.PI * 2); ctx.fill();
-        if (textures.Player.complete) ctx.drawImage(textures.Player, x - 35, y - 35, 70, 70);
+        if (img.complete) ctx.drawImage(img, x - 35, y - 35, 70, 70);
     }
 }
 
 class Projectile {
     constructor(x, y, vName, yOff = 0) {
-        this.x = x; this.y = y + yOff; this.vName = vName; this.radius = vName === 'Devadatta' ? 12 : 6;
+        this.x = x; this.y = y + yOff; this.vName = vName; 
+        this.radius = vName === 'Devadatta' ? 12 : 6;
+        this.sqRadius = this.radius * this.radius;
         let baseS = vName === 'Angulimala' ? 4.5 : 3.5;
         if (vName === 'Devadatta') {
             const rad = (Math.random() * 30 - 15) * (Math.PI / 180);
@@ -251,30 +205,32 @@ class Projectile {
     }
     update() { this.x += this.vx; this.y += this.vy; }
     draw(ctx) {
-        const x = this.x | 0, y = this.y | 0;
         ctx.fillStyle = this.vName === 'Mara' ? "#ff4081" : "#37474f";
-        ctx.beginPath(); ctx.arc(x, y, this.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(this.x | 0, this.y | 0, this.radius, 0, Math.PI * 2); ctx.fill();
     }
 }
 
 class Villain {
-    constructor(x, gapY, name) {
-        this.x = x; this.y = gapY + (CONFIG.gap / 2); this.name = name;
-        this.state = CONFIG.states.IDLE; this.timer = 0;
+    constructor(x, gapY, name, config) {
+        this.x = x; this.y = gapY + (config.gap / 2); this.name = name;
+        this.state = config.states.IDLE; this.timer = 0;
         this.durations = { IDLE: 60, GATHER: 50, RELEASE: 40 };
         this.activeSounds = [];
     }
-    update(projs) {
-        this.x -= CONFIG.speed; this.timer++;
-        if(this.state === CONFIG.states.IDLE && this.timer > this.durations.IDLE) this.transition(CONFIG.states.GATHER);
-        else if(this.state === CONFIG.states.GATHER && this.timer > this.durations.GATHER) { this.transition(CONFIG.states.RELEASE); this.fire(projs); }
-        else if(this.state === CONFIG.states.RELEASE && this.timer > this.durations.RELEASE) this.transition(CONFIG.states.IDLE);
+    update(projs, speed, config, sfxList) {
+        this.x -= speed; this.timer++;
+        if(this.state === config.states.IDLE && this.timer > this.durations.IDLE) this.transition(config.states.GATHER);
+        else if(this.state === config.states.GATHER && this.timer > this.durations.GATHER) { 
+            this.transition(config.states.RELEASE); 
+            this.fire(projs, sfxList); 
+        }
+        else if(this.state === config.states.RELEASE && this.timer > this.durations.RELEASE) this.transition(config.states.IDLE);
         this.activeSounds = this.activeSounds.filter(s => !s.ended);
     }
-    fire(projs) {
+    fire(projs, sfxList) {
         const sKey = this.name.toLowerCase();
-        if (sounds[sKey]) {
-            const sfx = sounds[sKey].cloneNode(); sfx.play().catch(() => {});
+        if (sfxList[sKey]) {
+            const sfx = sfxList[sKey].cloneNode(); sfx.play().catch(() => {});
             this.activeSounds.push(sfx);
         }
         if(this.name === 'Mara') {
@@ -284,34 +240,57 @@ class Villain {
     }
     stopAllSounds() { this.activeSounds.forEach(s => { s.pause(); s.currentTime = 0; }); this.activeSounds = []; }
     transition(s) { this.state = s; this.timer = 0; }
-    draw(ctx) {
-        const x = this.x | 0, y = this.y | 0;
-        let frameX = this.state === CONFIG.states.GATHER ? 75 : (this.state === CONFIG.states.RELEASE ? 150 : 0);
-        if (textures[this.name].complete) ctx.drawImage(textures[this.name], frameX, 0, 75, 75, x - 45, y - 45, 90, 90);
+    draw(ctx, imgs) {
+        let frameX = this.state === 'GATHER' ? 75 : (this.state === 'RELEASE' ? 150 : 0);
+        if (imgs[this.name].complete) ctx.drawImage(imgs[this.name], frameX, 0, 75, 75, (this.x - 45) | 0, (this.y - 45) | 0, 90, 90);
     }
 }
 
 class Obstacle {
-    constructor(w, h) { this.x = w; this.width = 80; this.gapY = Math.random() * (h - CONFIG.gap - 160) + 80; this.passed = false; }
-    update() { this.x -= CONFIG.speed; }
-    draw(ctx, h) {
+    constructor(w, h, config) { this.x = w; this.width = 80; this.gapY = Math.random() * (h - config.gap - 160) + 80; this.passed = false; }
+    update(speed) { this.x -= speed; }
+    draw(ctx, h, config) {
         const x = this.x | 0, gy = this.gapY | 0;
         ctx.fillStyle = "rgba(52, 73, 94, 0.9)";
         ctx.fillRect(x, 0, this.width, gy);
-        ctx.fillRect(x, gy + CONFIG.gap, this.width, h - (gy + CONFIG.gap));
+        ctx.fillRect(x, gy + config.gap, this.width, h - (gy + config.gap));
     }
 }
 
+/**
+ * CORE ENGINE
+ */
 class GameEngine {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d', { alpha: false });
         this.offscreenSky = document.createElement('canvas');
+        
+        // CACHE DOM
+        this.scoreEl = document.getElementById('scoreDisplay');
+        this.bestEl = document.getElementById('bestDisplay');
+        this.startBtn = document.getElementById('startBtn');
+        this.loadMsg = document.getElementById('load-msg');
+        this.startMenu = document.getElementById('start-menu');
+        this.overMenu = document.getElementById('over-menu');
+        this.deathTitle = document.getElementById('death-title');
+        this.deathMsg = document.getElementById('death-msg');
+        this.nameInput = document.getElementById('playerName');
+
         this.setupRetina();
         this.lotus = new Lotus();
         this.clouds = [new Cloud(this.virtualW), new Cloud(this.virtualW), new Cloud(this.virtualW)];
-        this.running = false; this.initControls();
+        
+        this.CONFIG = {
+            gravity: 0.15, jump: -3.8, speed: 1.8, cloudSpeed: 0.3,
+            gap: 300, spawnRate: 180,
+            states: { IDLE: 'IDLE', GATHER: 'GATHER', RELEASE: 'RELEASE' }
+        };
+        
+        this.running = false; 
+        this.init();
     }
+
     setupRetina() {
         const dpr = window.devicePixelRatio || 1;
         this.virtualW = Math.min(window.innerWidth * 0.95, 420);
@@ -321,6 +300,7 @@ class GameEngine {
         this.canvas.style.width = this.virtualW + 'px';
         this.canvas.style.height = this.virtualH + 'px';
         this.ctx.scale(dpr, dpr);
+
         this.offscreenSky.width = this.canvas.width;
         this.offscreenSky.height = this.canvas.height;
         const osCtx = this.offscreenSky.getContext('2d');
@@ -328,23 +308,35 @@ class GameEngine {
         sky.addColorStop(0, "#243B55"); sky.addColorStop(0.7, "#B43757"); sky.addColorStop(1, "#F8CDDA");
         osCtx.fillStyle = sky; osCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
-    initControls() {
-        const act = (e) => { if(this.running) this.lotus.jump(); e.preventDefault(); };
+
+    init() {
+        let loaded = 0;
+        const check = () => { if(++loaded === 4) { this.startBtn.disabled = false; this.loadMsg.innerText = "Spirit is aligned."; }};
+        Object.values(textures).forEach(img => img.onload = check);
+        textures.Mara.src = 'mararef1.png'; textures.Devadatta.src = 'devdattaref1.png'; 
+        textures.Angulimala.src = 'angulimalaref1.png'; textures.Player.src = 'playerlotus.png';
+
+        const act = (e) => { if(this.running) this.lotus.jump(this.CONFIG.jump); e.preventDefault(); };
         this.canvas.addEventListener('touchstart', act, {passive: false});
         this.canvas.addEventListener('mousedown', act);
-        document.getElementById('startBtn').onclick = () => { 
-            const input = document.getElementById('playerName').value.trim();
-            this.currentUpasak = input || "Upasak";
+        
+        this.startBtn.onclick = () => { 
+            this.currentUpasak = this.nameInput.value.trim() || "Upasak";
             sounds.bg.play(); this.start(); 
         };
         document.getElementById('retryBtn').onclick = () => { this.villains.forEach(v => v.stopAllSounds()); this.start(); };
+        this.updateBestDisplay();
     }
+
+    updateBestDisplay() { this.bestEl.innerText = `Best: ${bestScore} (${bestName})`; }
+
     start() {
         this.obstacles = []; this.villains = []; this.projectiles = []; this.score = 0; this.frame = 0;
         this.lotus.reset(); this.running = true;
-        document.getElementById('start-menu').classList.add('hidden'); document.getElementById('over-menu').classList.add('hidden');
+        this.startMenu.classList.add('hidden'); this.overMenu.classList.add('hidden');
         this.loop();
     }
+
     stop(killerType) {
         this.running = false;
         this.villains.forEach(v => v.stopAllSounds());
@@ -352,47 +344,60 @@ class GameEngine {
             bestScore = this.score; bestName = this.currentUpasak;
             localStorage.setItem('vipaka_best_score', bestScore);
             localStorage.setItem('vipaka_best_name', bestName);
-            updateBestDisplay();
+            this.updateBestDisplay();
         }
         const data = LORE[killerType];
-        document.getElementById('death-title').innerText = data.title;
-        document.getElementById('death-msg').innerText = data.msg;
-        document.getElementById('over-menu').classList.remove('hidden');
+        this.deathTitle.innerText = data.title;
+        this.deathMsg.innerText = data.msg;
+        this.overMenu.classList.remove('hidden');
     }
+
     update() {
-        this.lotus.update(); this.clouds.forEach(c => { c.update(); if(c.x < -150) c.reset(this.virtualW); });
+        this.lotus.update(this.CONFIG.gravity);
+        this.clouds.forEach(c => { c.update(this.CONFIG.cloudSpeed); if(c.x < -150) c.reset(this.virtualW); });
+        
         if(this.lotus.y < 0 || this.lotus.y > this.virtualH) return this.stop("Boundary");
-        if(++this.frame % CONFIG.spawnRate === 0) {
-            const o = new Obstacle(this.virtualW, this.virtualH); this.obstacles.push(o);
-            const vNames = ['Devadatta', 'Mara', 'Angulimala'];
-            this.villains.push(new Villain(this.virtualW + 100, o.gapY, vNames[Math.floor(Math.random()*3)]));
+        
+        if(++this.frame % this.CONFIG.spawnRate === 0) {
+            const o = new Obstacle(this.virtualW, this.virtualH, this.CONFIG);
+            this.obstacles.push(o);
+            this.villains.push(new Villain(this.virtualW + 100, o.gapY, ['Devadatta', 'Mara', 'Angulimala'][Math.floor(Math.random()*3)], this.CONFIG));
         }
-        this.obstacles.forEach((o, i) => {
-            o.update();
-            if(this.lotus.x + 10 > o.x && this.lotus.x - 10 < o.x + o.width) {
-                if(this.lotus.y - 10 < o.gapY || this.lotus.y + 10 > o.gapY + CONFIG.gap) return this.stop("Obstacle");
+
+        const lotusX = this.lotus.x, lotusY = this.lotus.y;
+
+        for(let i = this.obstacles.length - 1; i >= 0; i--) {
+            const o = this.obstacles[i]; o.update(this.CONFIG.speed);
+            if(lotusX + 10 > o.x && lotusX - 10 < o.x + o.width) {
+                if(lotusY - 10 < o.gapY || lotusY + 10 > o.gapY + this.CONFIG.gap) return this.stop("Obstacle");
             }
-            if(!o.passed && o.x < this.lotus.x) { o.passed = true; this.score++; }
+            if(!o.passed && o.x < lotusX) { o.passed = true; this.score++; this.scoreEl.innerText = `Equanimity: ${this.score}`; }
             if(o.x < -100) this.obstacles.splice(i, 1);
-        });
-        this.villains.forEach((v, i) => {
-            v.update(this.projectiles);
+        }
+
+        for(let i = this.villains.length - 1; i >= 0; i--) {
+            const v = this.villains[i]; v.update(this.projectiles, this.CONFIG.speed, this.CONFIG, sounds);
             if(v.x < -100) { v.stopAllSounds(); this.villains.splice(i, 1); }
-        });
-        this.projectiles.forEach((p, i) => {
-            p.update(); if(Math.hypot(p.x - this.lotus.x, p.y - this.lotus.y) < 22) return this.stop(p.vName);
+        }
+
+        for(let i = this.projectiles.length - 1; i >= 0; i--) {
+            const p = this.projectiles[i]; p.update();
+            const dx = p.x - lotusX, dy = p.y - lotusY;
+            // SQUARED DISTANCE COLLISION (Faster than hypot)
+            if(dx*dx + dy*dy < 484) return this.stop(p.vName);
             if(p.x < -50) this.projectiles.splice(i, 1);
-        });
-        document.getElementById('scoreDisplay').innerText = `Equanimity: ${this.score}`;
+        }
     }
+
     draw() {
         this.ctx.drawImage(this.offscreenSky, 0, 0, this.canvas.width, this.canvas.height, 0, 0, this.virtualW, this.virtualH);
         this.clouds.forEach(c => c.draw(this.ctx));
-        this.obstacles.forEach(o => o.draw(this.ctx, this.virtualH));
-        this.villains.forEach(v => v.draw(this.ctx));
+        this.obstacles.forEach(o => o.draw(this.ctx, this.virtualH, this.CONFIG));
+        this.villains.forEach(v => v.draw(this.ctx, textures));
         this.projectiles.forEach(p => p.draw(this.ctx));
-        this.lotus.draw(this.ctx);
+        this.lotus.draw(this.ctx, textures.Player);
     }
+
     loop() { if(!this.running) return; this.update(); this.draw(); requestAnimationFrame(() => this.loop()); }
 }
 const game = new GameEngine(); game.draw();
