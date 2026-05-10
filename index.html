@@ -85,11 +85,17 @@
             border-radius: 100px; font-weight: 700; color: white; font-size: 0.8rem;
         }
 
+        /* Credits Section */
         .credits {
             margin-top: 20px; padding-top: 10px;
-            border-top: 1px solid rgba(255,255,255,0.15); font-size: 0.7rem;
+            border-top: 1px solid rgba(255,255,255,0.15); 
+            font-size: 0.7rem;
         }
+        .credits-main { display: block; margin-bottom: 4px; }
+        .credits-music { display: block; margin-bottom: 8px; font-size: 0.65rem; opacity: 0.8; }
+        .credits-tech { display: block; font-size: 0.55rem; opacity: 0.5; letter-spacing: 1.5px; }
         .credits a { color: #ffd54f; text-decoration: none; font-weight: 700; }
+        
         .hidden { display: none; }
     </style>
 </head>
@@ -100,7 +106,7 @@
     <div id="ui">
         <div class="stats-wrap">
             <div id="scoreDisplay" class="score-pill">Equanimity: 0</div>
-            <div id="bestDisplay" class="score-pill" style="font-size: 0.65rem; opacity: 0.8;">Best: 0 (Upasaks)</div>
+            <div id="bestDisplay" class="score-pill" style="font-size: 0.65rem; opacity: 0.8;">Best: 0 (Upasak)</div>
         </div>
         
         <div id="start-menu" class="glass-panel">
@@ -119,9 +125,11 @@
             </div>
             <p id="load-msg" style="font-size: 0.8rem; margin-bottom: 15px;">Gathering the winds...</p>
             <button id="startBtn" disabled>Begin Journey</button>
+            
             <div class="credits">
-                <span style="opacity:0.9">Made with ❤️ by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a></span><br>
-                <span style="font-size: 0.55rem; opacity: 0.5; letter-spacing: 1.5px;">HTML5 • JS • GEMINI AI</span>
+                <span class="credits-main">Made with ❤️ by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a></span>
+                <span class="credits-music">Music: <a href="https://www.youtube.com/watch?v=zttPP_xvKeU" target="_blank">Pawa Jaymangal Atthagatha by Ash King Piano</a></span>
+                <span class="credits-tech">HTML5 • JS • GEMINI AI</span>
             </div>
         </div>
 
@@ -130,7 +138,8 @@
             <p id="death-msg" style="font-style: italic; font-weight: 300; font-size: 0.85rem; margin-bottom: 20px;"></p>
             <button id="retryBtn">Return to Center</button>
             <div class="credits">
-                <span>Made with ❤️ by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a></span>
+                <span class="credits-main">Made with ❤️ by <a href="https://instagram.com/rekoilchafe" target="_blank">Rekoil Chafe</a></span>
+                <span class="credits-music">Music: <a href="https://www.youtube.com/watch?v=zttPP_xvKeU" target="_blank">Pawa Jaymangal Atthagatha by Ash King Piano</a></span>
             </div>
         </div>
     </div>
@@ -383,7 +392,6 @@ class GameEngine {
         for(let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i]; p.update();
             const dx = p.x - lotusX, dy = p.y - lotusY;
-            // SQUARED DISTANCE COLLISION (Faster than hypot)
             if(dx*dx + dy*dy < 484) return this.stop(p.vName);
             if(p.x < -50) this.projectiles.splice(i, 1);
         }
